@@ -52,6 +52,12 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+// ✅ Ensure game state document exists
+db.collection("game").doc("state").set({
+  calledWords: [],
+  resetCounter: 0
+}, { merge: true });
+
 /* 🩺 MEDIC BINGO WORDS */
 const bingoWords = [
   "Stethoscope","CPR","Bandages","IV Drip","Ambulance",
@@ -83,7 +89,7 @@ async function callRandomWord() {
   document.getElementById("lastWord").innerText = "Last called: " + word;
 }
 
-/* 🏆 REAL-TIME WINNER LIST (AUTO UPDATE) */
+// 🏆 LIVE WINNER LISTENER (FINAL, STABLE)
 db.collection("players")
   .where("bingo", "==", true)
   .onSnapshot(snapshot => {
@@ -92,15 +98,14 @@ db.collection("players")
     list.innerHTML = "";
 
     if (snapshot.empty) {
-      const li = document.createElement("li");
-      li.innerText = "No winners yet";
-      list.appendChild(li);
+      list.innerHTML = "<li>No winners yet</li>";
       return;
     }
 
     snapshot.forEach(doc => {
+      const data = doc.data();
       const li = document.createElement("li");
-      li.innerText = `${doc.id} — ${doc.data().time}`;
+      li.textContent = `${doc.id} — ${data.time}`;
       list.appendChild(li);
     });
   });
@@ -132,6 +137,7 @@ async function resetGame() {
 
 </body>
 </html>
+
 
 
 
