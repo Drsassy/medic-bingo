@@ -159,12 +159,14 @@ function checkBingo() {
 }
 
 async function claimBingo(){
-  if(!checkBingo()) return alert("No Bingo yet!");
-  const name=document.getElementById("playerName").innerText;
+  const name = document.getElementById("playerName").innerText;
+
   await db.collection("players").doc(name).update({
-    bingo:true,time:new Date().toISOString()
+    bingo: true,
+    time: new Date().toISOString()
   });
-  alert("🎉 Bingo claimed!");
+
+  alert("🎉 Bingo claimed! Please wait for host verification.");
 }
 
 db.collection("game").doc("state").onSnapshot(doc=>{
@@ -174,5 +176,6 @@ db.collection("game").doc("state").onSnapshot(doc=>{
 
 </body>
 </html>
+
 
 
