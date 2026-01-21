@@ -12,8 +12,7 @@
 <button onclick="callRandomWord()">🎲 Call Random Word</button>
 <p id="lastWord"></p>
 
-<h3>🏆 Winners</h3>
-<ul id="winners"></ul>
+
 
 <h3>🔁 Reset Game</h3>
 <button onclick="resetGame()">RESET GAME</button>
@@ -111,9 +110,32 @@ async function resetGame(){
   await db.collection("game").doc("state").set({calledWords:[]});
   alert("Game reset!");
 }
+
+// 🔴 REAL-TIME WINNER LISTENER (AUTO UPDATE)
+db.collection("players")
+ .where("bingo", "==", true)
+ .onSnapshot(snapshot => {
+
+   const list = document.getElementById("winners");
+   list.innerHTML = "";
+
+   if (snapshot.empty) {
+     const li = document.createElement("li");
+     li.innerText = "No winners yet";
+     list.appendChild(li);
+     return;
+   }
+
+   snapshot.forEach(doc => {
+     const li = document.createElement("li");
+     li.innerText = ${doc.id} — ${doc.data().time};
+     list.appendChild(li);
+   });
+ });
 </script>
 
 </body>
 </html>
+
 
 
