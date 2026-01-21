@@ -1,38 +1,58 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Medic Bingo Admin</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+}
+button {
+  padding: 8px 14px;
+  font-size: 16px;
+  margin: 5px 0;
+  cursor: pointer;
+}
+</style>
 </head>
 
 <body>
-<h1>🩺 Medic Bingo Control Panel</h1>
 
-<h3>📢 Call a Word</h3>
-<button onclick="callRandomWord()">🎲 Call Random Word</button>
-<p id="lastWord"></p>
+<h1>🩺 Medic Bingo – Admin Panel</h1>
 
+<h2>🎲 Call Random Word</h2>
+<button onclick="callRandomWord()">Call Random Word</button>
+<p id="lastWord"><em>No word called yet</em></p>
 
+<h2>🏆 Winners (Live)</h2>
+<ul id="winners">
+  <li>No winners yet</li>
+</ul>
 
-<h3>🔁 Reset Game</h3>
+<h2>🔁 Reset Game</h2>
 <button onclick="resetGame()">RESET GAME</button>
 
+<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script>
-/* 🔥 PASTE YOUR firebaseConfig BELOW (REPLACE THIS ONE) */
+/* 🔥 REPLACE THIS WITH YOUR REAL firebaseConfig */
 const firebaseConfig = {
-    apiKey: "AIzaSyDASEWy-s1lBVTiXiJWx7KRvlk_IB1mN24",
-    authDomain: "medic-bingo.firebaseapp.com",
-    projectId: "medic-bingo",
-    storageBucket: "medic-bingo.firebasestorage.app",
-    messagingSenderId: "677419756545",
-    appId: "1:677419756545:web:099e1928113290c587a400"
-  };
+  apiKey: "PASTE_YOUR_KEY",
+  authDomain: "PASTE_YOUR_DOMAIN",
+  projectId: "PASTE_YOUR_PROJECT_ID",
+  storageBucket: "PASTE_YOUR_BUCKET",
+  messagingSenderId: "PASTE_YOUR_SENDER_ID",
+  appId: "PASTE_YOUR_APP_ID"
+};
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+/* 🩺 MEDIC BINGO WORDS */
 const bingoWords = [
   "Stethoscope","CPR","Bandages","IV Drip","Ambulance",
   "Trauma Kit","Scrubs","Vital Signs","Code Blue","Defibrillator",
@@ -42,12 +62,13 @@ const bingoWords = [
   "Medical Chart","Scalpel","Face Mask","Disinfectant",
   "Thermometer","AED","Patient Transport"
 ];
-async function callRandomWord(){
+
+/* 🎲 CALL RANDOM WORD (NO REPEATS) */
+async function callRandomWord() {
   const ref = db.collection("game").doc("state");
   const doc = await ref.get();
 
   let called = doc.exists ? doc.data().calledWords : [];
-
   const remaining = bingoWords.filter(w => !called.includes(w));
 
   if (remaining.length === 0) {
@@ -59,29 +80,10 @@ async function callRandomWord(){
   called.push(word);
 
   await ref.set({ calledWords: called });
-
   document.getElementById("lastWord").innerText = "Last called: " + word;
 }
-    
-const select = document.getElementById("word");
-bingoWords.forEach(w=>{
-  const o=document.createElement("option");
-  o.value=w; o.text=w;
-  select.appendChild(o);
-});
 
-async function callWord(){
-  const ref=db.collection("game").doc("state");
-  const doc=await ref.get();
-  const called=doc.exists?doc.data().calledWords:[];
-  const word=select.value;
-  if(!called.includes(word)){
-    called.push(word);
-    await ref.set({calledWords:called});
-    alert("Called: "+word);
-  }
-}
-
+/* 🏆 REAL-TIME WINNER LIST (AUTO UPDATE) */
 db.collection("players")
   .where("bingo", "==", true)
   .onSnapshot(snapshot => {
@@ -102,40 +104,20 @@ db.collection("players")
       list.appendChild(li);
     });
   });
-    
-async function resetGame(){
-  if(!confirm("Reset everything?")) return;
-  const players=await db.collection("players").get();
-  players.forEach(d=>d.ref.delete());
-  await db.collection("game").doc("state").set({calledWords:[]});
-  alert("Game reset!");
+
+/* 🔁 RESET GAME */
+async function resetGame() {
+  if (!confirm("Are you sure you want to reset the entire game?")) return;
+
+  const players = await db.collection("players").get();
+  players.forEach(doc => doc.ref.delete());
+
+  await db.collection("game").doc("state").set({ calledWords: [] });
+
+  document.getElementById("lastWord").innerText = "No word called yet";
+  alert("Game has been reset");
 }
-
-// 🔴 REAL-TIME WINNER LISTENER (AUTO UPDATE)
-db.collection("players")
- .where("bingo", "==", true)
- .onSnapshot(snapshot => {
-
-   const list = document.getElementById("winners");
-   list.innerHTML = "";
-
-   if (snapshot.empty) {
-     const li = document.createElement("li");
-     li.innerText = "No winners yet";
-     list.appendChild(li);
-     return;
-   }
-
-   snapshot.forEach(doc => {
-     const li = document.createElement("li");
-     li.innerText = ${doc.id} — ${doc.data().time};
-     list.appendChild(li);
-   });
- });
 </script>
 
 </body>
 </html>
-
-
-
