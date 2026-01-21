@@ -2,42 +2,38 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Medic Bingo Admin</title>
+<title>Medic Bingo – Admin</title>
 
 <style>
-body{
-  font-family:"Segoe UI",Arial,sans-serif;
-  background:linear-gradient(135deg,#eaf6f6,#fff);
-  padding:30px;
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: linear-gradient(135deg, #eaf6f6, #ffffff);
+  padding: 30px;
 }
-h1,h2{color:#b71c1c;}
-.card{
-  background:white;
-  border-radius:16px;
-  padding:22px;
-  margin-bottom:20px;
-  max-width:750px;
-  box-shadow:0 12px 30px rgba(0,0,0,.1);
+h1, h2 { color: #b71c1c; }
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 22px;
+  margin-bottom: 20px;
+  max-width: 760px;
+  box-shadow: 0 12px 30px rgba(0,0,0,.1);
 }
-button,select{
-  padding:12px 18px;
-  font-size:15px;
-  border-radius:10px;
-  border:none;
-  cursor:pointer;
+button, select {
+  padding: 12px 18px;
+  font-size: 15px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
 }
-button{
-  background:#b71c1c;
-  color:white;
-  font-weight:bold;
-}
-button.reset{background:#000;}
-ul li{
-  background:#f7fdfc;
-  padding:10px;
-  border-radius:8px;
-  margin-bottom:6px;
-  font-weight:bold;
+button { background: #b71c1c; color: white; }
+button.reset { background: #000; }
+ul li {
+  background: #f7fdfc;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 6px;
 }
 </style>
 </head>
@@ -47,8 +43,8 @@ ul li{
 <h1>🩺 Medic Bingo — Admin Panel</h1>
 
 <div class="card">
-  <h2>🎮 Game Mode</h2>
-  <select id="modeSelect" onchange="setMode()">
+  <h2>🎮 Calling Mode</h2>
+  <select id="callMode" onchange="setCallMode()">
     <option value="words">Medic Words</option>
     <option value="numbers">Numbers (1–75)</option>
   </select>
@@ -56,7 +52,7 @@ ul li{
 
 <div class="card">
   <h2>🎲 Call Next</h2>
-  <button onclick="callRandom()">Call Random</button>
+  <button onclick="callNext()">Call</button>
   <p id="lastCall"><em>Nothing called yet</em></p>
 </div>
 
@@ -67,7 +63,7 @@ ul li{
 
 <div class="card">
   <h2>🔥 Close to Bingo</h2>
-  <ul id="nearList"><li>No one close yet</li></ul>
+  <ul id="near"><li>No one close yet</li></ul>
 </div>
 
 <div class="card">
@@ -89,9 +85,9 @@ const firebaseConfig = {
   };
 
 firebase.initializeApp(firebaseConfig);
-const db=firebase.firestore();
+const db = firebase.firestore();
 
-const WORDS=[
+const WORDS = [
   "Stethoscope","CPR","Bandages","IV Drip","Ambulance",
   "Trauma Kit","Scrubs","Vital Signs","Code Blue","Defibrillator",
   "Syringe","First Responder","Triage","Pulse Check","Oxygen Mask",
@@ -101,79 +97,61 @@ const WORDS=[
   "Thermometer","AED","Patient Transport"
 ];
 
-// ensure game state exists
+// Ensure game state
 db.collection("game").doc("state").set({
-  called:[],
-  resetCounter:0,
-  mode:"words",
-  modeVersion:0
-},{merge:true});
+  called: [],
+  callMode: "words",
+  resetCounter: 0
+}, { merge: true });
 
-async function setMode(){
-  const ref=db.collection("game").doc("state");
-  const doc=await ref.get();
-  const v=(doc.data().modeVersion||0)+1;
-
-  await ref.update({
-    mode:document.getElementById("modeSelect").value,
-    called:[],
-    modeVersion:v
+async function setCallMode() {
+  await db.collection("game").doc("state").update({
+    callMode: document.getElementById("callMode").value,
+    called: []
   });
-
-  document.getElementById("lastCall").innerText="Mode changed — new game started";
+  document.getElementById("lastCall").innerText = "Calling mode switched";
 }
 
-async function callRandom(){
-  const ref=db.collection("game").doc("state");
-  const doc=await ref.get();
-  const d=doc.data();
+async function callNext() {
+  const ref = db.collection("game").doc("state");
+  const data = (await ref.get()).data();
 
-  const pool=d.mode==="numbers"
+  const pool = data.callMode === "numbers"
     ? Array.from({length:75},(_,i)=>i+1)
     : WORDS;
 
-  const remaining=pool.filter(x=>!d.called.includes(x));
-  if(!remaining.length) return alert("All called!");
+  const remaining = pool.filter(x => !data.called.includes(x));
+  if (!remaining.length) return alert("All items called");
 
-  const pick=remaining[Math.floor(Math.random()*remaining.length)];
-  await ref.update({called:[...d.called,pick]});
-  document.getElementById("lastCall").innerText="Last called: "+pick;
+  const pick = remaining[Math.floor(Math.random()*remaining.length)];
+  await ref.update({ called: [...data.called, pick] });
+
+  document.getElementById("lastCall").innerText = "Last called: " + pick;
 }
 
 db.collection("players").where("bingo","==",true)
-.onSnapshot(s=>{
-  const ul=document.getElementById("winners");
-  ul.innerHTML=s.empty?"<li>No winners yet</li>":"";
-  s.forEach(d=>{
-    const li=document.createElement("li");
-    li.innerText=`${d.id} — ${d.data().time}`;
-    ul.appendChild(li);
-  });
+.onSnapshot(snap=>{
+  const ul = document.getElementById("winners");
+  ul.innerHTML = snap.empty ? "<li>No winners yet</li>" : "";
+  snap.forEach(d => ul.innerHTML += `<li>${d.id}</li>`);
 });
 
 db.collection("players").where("nearBingo","==",true)
-.onSnapshot(s=>{
-  const ul=document.getElementById("nearList");
-  ul.innerHTML=s.empty?"<li>No one close yet</li>":"";
-  s.forEach(d=>{
-    const li=document.createElement("li");
-    li.innerText=`${d.id} → ${d.data().nearLine}`;
-    ul.appendChild(li);
-  });
+.onSnapshot(snap=>{
+  const ul = document.getElementById("near");
+  ul.innerHTML = snap.empty ? "<li>No one close yet</li>" : "";
+  snap.forEach(d => ul.innerHTML += `<li>${d.id} → ${d.data().nearLine}</li>`);
 });
 
-async function resetGame(){
-  const players=await db.collection("players").get();
-  players.forEach(p=>p.ref.delete());
+async function resetGame() {
+  const players = await db.collection("players").get();
+  players.forEach(p => p.ref.delete());
 
-  const ref=db.collection("game").doc("state");
-  const doc=await ref.get();
-  await ref.set({
-    called:[],
-    resetCounter:(doc.data().resetCounter||0)+1
-  },{merge:true});
+  await db.collection("game").doc("state").update({
+    called: [],
+    resetCounter: firebase.firestore.FieldValue.increment(1)
+  });
 }
 </script>
 </body>
 </html>
-
