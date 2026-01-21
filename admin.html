@@ -9,8 +9,8 @@
 <h1>🩺 Medic Bingo Control Panel</h1>
 
 <h3>📢 Call a Word</h3>
-<select id="word"></select>
-<button onclick="callWord()">Call Word</button>
+<button onclick="callRandomWord()">🎲 Call Random Word</button>
+<p id="lastWord"></p>
 
 <h3>🏆 Winners</h3>
 <button onclick="loadWinners()">Refresh</button>
@@ -44,7 +44,27 @@ const bingoWords = [
   "Medical Chart","Scalpel","Face Mask","Disinfectant",
   "Thermometer","AED","Patient Transport"
 ];
+async function callRandomWord(){
+  const ref = db.collection("game").doc("state");
+  const doc = await ref.get();
 
+  let called = doc.exists ? doc.data().calledWords : [];
+
+  const remaining = bingoWords.filter(w => !called.includes(w));
+
+  if (remaining.length === 0) {
+    alert("All words have been called!");
+    return;
+  }
+
+  const word = remaining[Math.floor(Math.random() * remaining.length)];
+  called.push(word);
+
+  await ref.set({ calledWords: called });
+
+  document.getElementById("lastWord").innerText = "Last called: " + word;
+}
+    
 const select = document.getElementById("word");
 bingoWords.forEach(w=>{
   const o=document.createElement("option");
@@ -86,3 +106,4 @@ async function resetGame(){
 
 </body>
 </html>
+
