@@ -159,9 +159,21 @@ function checkBingo() {
 }
 
 async function claimBingo(){
-  const name = document.getElementById("playerName").innerText;
+  // 🔒 prevent cheating
+  if (!checkBingo()) {
+    alert("❌ You don't have Bingo yet!");
+    return;
+  }
 
+  const name = document.getElementById("playerName").innerText;
   const ref = db.collection("players").doc(name);
+  const snap = await ref.get();
+
+  // prevent double claims
+  if (snap.exists && snap.data().bingo === true) {
+    alert("⚠️ You already claimed Bingo.");
+    return;
+  }
 
   await ref.set({
     bingo: true,
@@ -199,6 +211,7 @@ db.collection("game").doc("state").onSnapshot(doc => {
 
 </body>
 </html>
+
 
 
 
