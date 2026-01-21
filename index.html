@@ -28,9 +28,21 @@ input, button {
   background: #fff;
   border: 2px solid #333;
   border-radius: 8px;
-  padding: 10px;
-  min-height: 60px;
+  padding: 6px;
+  min-height: 70px;
+
   font-weight: bold;
+  font-size: 12px;
+  line-height: 1.1;
+  text-align: center;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  word-wrap: break-word;
+  white-space: normal;
+
   opacity: 0.5;
 }
 .cell.active { cursor: pointer; opacity: 1; }
@@ -162,3 +174,4 @@ db.collection("game").doc("state").onSnapshot(doc=>{
 
 </body>
 </html>
+
