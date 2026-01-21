@@ -79,7 +79,7 @@ async function callRandomWord() {
   const word = remaining[Math.floor(Math.random() * remaining.length)];
   called.push(word);
 
-  await ref.set({ calledWords: called });
+  await ref.update({ calledWords: called });
   document.getElementById("lastWord").innerText = "Last called: " + word;
 }
 
@@ -132,5 +132,6 @@ async function resetGame() {
 
 </body>
 </html>
+
 
 
