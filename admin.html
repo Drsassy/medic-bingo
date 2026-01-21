@@ -13,7 +13,6 @@
 <p id="lastWord"></p>
 
 <h3>🏆 Winners</h3>
-<button onclick="loadWinners()">Refresh</button>
 <ul id="winners"></ul>
 
 <h3>🔁 Reset Game</h3>
@@ -84,17 +83,27 @@ async function callWord(){
   }
 }
 
-async function loadWinners(){
-  const snap=await db.collection("players").where("bingo","==",true).get();
-  const list=document.getElementById("winners");
-  list.innerHTML="";
-  snap.forEach(d=>{
-    const li=document.createElement("li");
-    li.innerText=`${d.id} — ${d.data().time}`;
-    list.appendChild(li);
-  });
-}
+db.collection("players")
+  .where("bingo", "==", true)
+  .onSnapshot(snapshot => {
 
+    const list = document.getElementById("winners");
+    list.innerHTML = "";
+
+    if (snapshot.empty) {
+      const li = document.createElement("li");
+      li.innerText = "No winners yet";
+      list.appendChild(li);
+      return;
+    }
+
+    snapshot.forEach(doc => {
+      const li = document.createElement("li");
+      li.innerText = `${doc.id} — ${doc.data().time}`;
+      list.appendChild(li);
+    });
+  });
+    
 async function resetGame(){
   if(!confirm("Reset everything?")) return;
   const players=await db.collection("players").get();
@@ -106,4 +115,5 @@ async function resetGame(){
 
 </body>
 </html>
+
 
