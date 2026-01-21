@@ -169,13 +169,28 @@ async function claimBingo(){
   alert("🎉 Bingo claimed! Please wait for host verification.");
 }
 
-db.collection("game").doc("state").onSnapshot(doc=>{
-  if(doc.exists){ calledWords = doc.data().calledWords; render(); }
+let lastReset = null;
+
+db.collection("game").doc("state").onSnapshot(doc => {
+  if (!doc.exists) return;
+
+  const data = doc.data();
+  calledWords = data.calledWords || [];
+
+  // 🔄 auto reset player when admin resets
+  if (lastReset !== null && data.resetCounter !== lastReset) {
+    alert("The game has been reset by the host.");
+    location.reload();
+  }
+
+  lastReset = data.resetCounter || 0;
+  render();
 });
 </script>
 
 </body>
 </html>
+
 
 
 
