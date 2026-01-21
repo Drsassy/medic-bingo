@@ -9,166 +9,85 @@ body {
   font-family: "Segoe UI", Arial, sans-serif;
   background: linear-gradient(135deg, #eaf6f6, #ffffff);
   padding: 30px;
-  color: #333;
 }
-
-h1 {
-  color: #b71c1c;
-  margin-bottom: 5px;
-}
-
-h2 {
-  color: #b71c1c;
-  margin-top: 0;
-}
-
-.subtitle {
-  color: #555;
-  margin-bottom: 20px;
-}
-
 .card {
   background: white;
   border-radius: 14px;
   padding: 22px;
   margin-bottom: 20px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-  max-width: 650px;
+  max-width: 720px;
 }
-
-button {
-  padding: 12px 20px;
+button, select {
+  padding: 10px 16px;
   font-size: 15px;
-  font-weight: bold;
-  border-radius: 10px;
+  border-radius: 8px;
   border: none;
   cursor: pointer;
-  background: #b71c1c;
-  color: white;
-  transition: all 0.2s ease;
 }
-
-button:hover {
-  background: #d32f2f;
-  transform: translateY(-1px);
-}
-
-button.reset {
-  background: #000;
-}
-
-input {
-  padding: 12px;
-  font-size: 15px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  width: 100%;
-  max-width: 320px;
-  margin-bottom: 10px;
-}
-
-#winners li {
-  background: #f7fdfc;
-  padding: 10px 14px;
-  border-radius: 8px;
-  margin-bottom: 8px;
-  font-weight: bold;
-}
-
-#lastWord {
-  font-size: 18px;
-  font-weight: bold;
-  margin-top: 10px;
-}
-
-#adminPanel {
-  display: none;
+button { background:#b71c1c; color:white; }
+button.reset { background:#000; }
+h1, h2 { color:#b71c1c; }
+ul li {
+  background:#f7fdfc;
+  padding:8px;
+  margin-bottom:6px;
+  border-radius:6px;
+  font-weight:bold;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🩺 Medic Bingo</h1>
-<p class="subtitle">Admin Control Panel</p>
+<h1>🩺 Medic Bingo – Admin</h1>
 
-<!-- 🔐 LOGIN -->
-<div id="login" class="card">
-  <h2>Admin Login</h2>
-
-  <input id="username" type="text" placeholder="Username">
-  <input id="password" type="password" placeholder="Password">
-
-  <br>
-  <button onclick="login()">Login</button>
-  <p id="loginError" style="color:red;"></p>
+<div class="card">
+  <h2>🎮 Game Mode</h2>
+  <select id="modeSelect" onchange="setMode()">
+    <option value="words">Medic Words</option>
+    <option value="numbers">Numbers (1–75)</option>
+  </select>
 </div>
 
-<!-- 🎛 ADMIN PANEL -->
-<div id="adminPanel">
-
-  <div class="card">
-    <h2>🎲 Call Random Word</h2>
-    <button onclick="callRandomWord()">Call Random Word</button>
-    <p id="lastWord"><em>No word called yet</em></p>
-  </div>
-
-  <div class="card">
-    <h2>🏆 Winners (Live)</h2>
-    <ul id="winners">
-      <li>No winners yet</li>
-    </ul>
-  </div>
-
-  <div class="card">
-    <h2>🔁 Reset Game</h2>
-    <button class="reset" onclick="resetGame()">RESET GAME</button>
-  </div>
-
+<div class="card">
+  <h2>🎲 Call Next</h2>
+  <button onclick="callRandom()">Call Random</button>
+  <p id="lastCall"><em>Nothing called yet</em></p>
 </div>
 
-<!-- Firebase SDKs -->
+<div class="card">
+  <h2>🏆 Winners</h2>
+  <ul id="winners"><li>No winners yet</li></ul>
+</div>
+
+<div class="card">
+  <h2>🔥 Close to Bingo</h2>
+  <ul id="nearList"><li>No one close yet</li></ul>
+</div>
+
+<div class="card">
+  <h2>🔁 Reset Game</h2>
+  <button class="reset" onclick="resetGame()">RESET</button>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script>
-/* 🔐 ADMIN CREDENTIALS */
-const ADMIN_USER = "sassy123";
-const ADMIN_PASS = "sassyontop";
-
-function login() {
-  const u = document.getElementById("username").value;
-  const p = document.getElementById("password").value;
-
-  if (u === ADMIN_USER && p === ADMIN_PASS) {
-    document.getElementById("login").style.display = "none";
-    document.getElementById("adminPanel").style.display = "block";
-  } else {
-    document.getElementById("loginError").innerText = "Invalid username or password";
-  }
-}
-
-/* 🔥 FIREBASE CONFIG — REPLACE WITH YOUR REAL ONE */
 const firebaseConfig = {
-    apiKey: "AIzaSyDASEWy-s1lBVTiXiJWx7KRvlk_IB1mN24",
-    authDomain: "medic-bingo.firebaseapp.com",
-    projectId: "medic-bingo",
-    storageBucket: "medic-bingo.firebasestorage.app",
-    messagingSenderId: "677419756545",
-    appId: "1:677419756545:web:099e1928113290c587a400"
-  };
+  apiKey: "PASTE",
+  authDomain: "PASTE",
+  projectId: "PASTE",
+  storageBucket: "PASTE",
+  messagingSenderId: "PASTE",
+  appId: "PASTE"
+};
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-/* Ensure game state exists */
-db.collection("game").doc("state").set({
-  calledWords: [],
-  resetCounter: 0
-}, { merge: true });
-
-/* 🩺 MEDIC BINGO WORDS */
-const bingoWords = [
+const words = [
   "Stethoscope","CPR","Bandages","IV Drip","Ambulance",
   "Trauma Kit","Scrubs","Vital Signs","Code Blue","Defibrillator",
   "Syringe","First Responder","Triage","Pulse Check","Oxygen Mask",
@@ -178,67 +97,68 @@ const bingoWords = [
   "Thermometer","AED","Patient Transport"
 ];
 
-/* 🎲 CALL RANDOM WORD */
-async function callRandomWord() {
-  const ref = db.collection("game").doc("state");
-  const doc = await ref.get();
-  const called = doc.exists ? doc.data().calledWords : [];
+// ensure game state
+db.collection("game").doc("state").set({
+  called: [],
+  resetCounter: 0,
+  mode: "words"
+}, { merge:true });
 
-  const remaining = bingoWords.filter(w => !called.includes(w));
-  if (remaining.length === 0) {
-    alert("All words have been called!");
-    return;
-  }
-
-  const word = remaining[Math.floor(Math.random() * remaining.length)];
-  called.push(word);
-
-  await ref.update({ calledWords: called });
-  document.getElementById("lastWord").innerText = "Last called: " + word;
+async function setMode(){
+  const mode=document.getElementById("modeSelect").value;
+  await db.collection("game").doc("state").update({mode});
+  alert("Mode set to "+mode);
 }
 
-/* 🏆 LIVE WINNER LIST */
-db.collection("players")
-  .where("bingo", "==", true)
-  .onSnapshot(snapshot => {
-    const list = document.getElementById("winners");
-    list.innerHTML = "";
+async function callRandom(){
+  const ref=db.collection("game").doc("state");
+  const doc=await ref.get();
+  const d=doc.data();
+  const pool=d.mode==="numbers"
+    ? Array.from({length:75},(_,i)=>i+1)
+    : words;
 
-    if (snapshot.empty) {
-      list.innerHTML = "<li>No winners yet</li>";
-      return;
-    }
+  const remaining=pool.filter(x=>!d.called.includes(x));
+  if(!remaining.length) return alert("All called!");
 
-    snapshot.forEach(doc => {
-      const li = document.createElement("li");
-      li.innerText = `${doc.id} — ${doc.data().time}`;
-      list.appendChild(li);
-    });
+  const pick=remaining[Math.floor(Math.random()*remaining.length)];
+  await ref.update({called:[...d.called,pick]});
+  document.getElementById("lastCall").innerText="Last called: "+pick;
+}
+
+db.collection("players").where("bingo","==",true)
+.onSnapshot(snap=>{
+  const ul=document.getElementById("winners");
+  ul.innerHTML=snap.empty?"<li>No winners yet</li>":"";
+  snap.forEach(d=>{
+    const li=document.createElement("li");
+    li.innerText=`${d.id} — ${d.data().time}`;
+    ul.appendChild(li);
   });
+});
 
-/* 🔁 RESET GAME */
-async function resetGame() {
-  if (!confirm("Are you sure you want to reset the entire game?")) return;
+db.collection("players").where("nearBingo","==",true)
+.onSnapshot(snap=>{
+  const ul=document.getElementById("nearList");
+  ul.innerHTML=snap.empty?"<li>No one close yet</li>":"";
+  snap.forEach(d=>{
+    const li=document.createElement("li");
+    li.innerText=`${d.id} → ${d.data().nearLine}`;
+    ul.appendChild(li);
+  });
+});
 
-  const players = await db.collection("players").get();
-  players.forEach(doc => doc.ref.delete());
+async function resetGame(){
+  const players=await db.collection("players").get();
+  players.forEach(d=>d.ref.delete());
 
-  const ref = db.collection("game").doc("state");
-  const doc = await ref.get();
-  const resetCounter = doc.exists && doc.data().resetCounter
-    ? doc.data().resetCounter + 1
-    : 1;
-
+  const ref=db.collection("game").doc("state");
+  const doc=await ref.get();
   await ref.set({
-    calledWords: [],
-    resetCounter: resetCounter
-  }, { merge: true });
-
-  document.getElementById("lastWord").innerText = "No word called yet";
-  alert("Game reset");
+    called:[],
+    resetCounter:(doc.data().resetCounter||0)+1
+  },{merge:true});
 }
 </script>
-
 </body>
 </html>
-
