@@ -5,34 +5,38 @@
 <title>Medic Bingo Admin</title>
 
 <style>
-body {
-  font-family: "Segoe UI", Arial, sans-serif;
-  background: linear-gradient(135deg, #eaf6f6, #ffffff);
-  padding: 30px;
+body{
+  font-family:"Segoe UI",Arial,sans-serif;
+  background:linear-gradient(135deg,#eaf6f6,#fff);
+  padding:30px;
 }
-.card {
-  background: white;
-  border-radius: 14px;
-  padding: 22px;
-  margin-bottom: 20px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-  max-width: 720px;
+h1,h2{color:#b71c1c;}
+.card{
+  background:white;
+  border-radius:16px;
+  padding:22px;
+  margin-bottom:20px;
+  max-width:750px;
+  box-shadow:0 12px 30px rgba(0,0,0,.1);
 }
-button, select {
-  padding: 10px 16px;
-  font-size: 15px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
+button,select{
+  padding:12px 18px;
+  font-size:15px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
 }
-button { background:#b71c1c; color:white; }
-button.reset { background:#000; }
-h1, h2 { color:#b71c1c; }
-ul li {
+button{
+  background:#b71c1c;
+  color:white;
+  font-weight:bold;
+}
+button.reset{background:#000;}
+ul li{
   background:#f7fdfc;
-  padding:8px;
+  padding:10px;
+  border-radius:8px;
   margin-bottom:6px;
-  border-radius:6px;
   font-weight:bold;
 }
 </style>
@@ -40,7 +44,7 @@ ul li {
 
 <body>
 
-<h1>🩺 Medic Bingo – Admin</h1>
+<h1>🩺 Medic Bingo — Admin Panel</h1>
 
 <div class="card">
   <h2>🎮 Game Mode</h2>
@@ -68,7 +72,7 @@ ul li {
 
 <div class="card">
   <h2>🔁 Reset Game</h2>
-  <button class="reset" onclick="resetGame()">RESET</button>
+  <button class="reset" onclick="resetGame()">RESET GAME</button>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -76,18 +80,18 @@ ul li {
 
 <script>
 const firebaseConfig = {
-    apiKey: "AIzaSyDASEWy-s1lBVTiXiJWx7KRvlk_IB1mN24",
-    authDomain: "medic-bingo.firebaseapp.com",
-    projectId: "medic-bingo",
-    storageBucket: "medic-bingo.firebasestorage.app",
-    messagingSenderId: "677419756545",
-    appId: "1:677419756545:web:099e1928113290c587a400"
-  };
+  apiKey:"PASTE",
+  authDomain:"PASTE",
+  projectId:"PASTE",
+  storageBucket:"PASTE",
+  messagingSenderId:"PASTE",
+  appId:"PASTE"
+};
 
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const db=firebase.firestore();
 
-const words = [
+const WORDS=[
   "Stethoscope","CPR","Bandages","IV Drip","Ambulance",
   "Trauma Kit","Scrubs","Vital Signs","Code Blue","Defibrillator",
   "Syringe","First Responder","Triage","Pulse Check","Oxygen Mask",
@@ -97,26 +101,36 @@ const words = [
   "Thermometer","AED","Patient Transport"
 ];
 
-// ensure game state
+// ensure game state exists
 db.collection("game").doc("state").set({
-  called: [],
-  resetCounter: 0,
-  mode: "words"
-}, { merge:true });
+  called:[],
+  resetCounter:0,
+  mode:"words",
+  modeVersion:0
+},{merge:true});
 
 async function setMode(){
-  const mode=document.getElementById("modeSelect").value;
-  await db.collection("game").doc("state").update({mode});
-  alert("Mode set to "+mode);
+  const ref=db.collection("game").doc("state");
+  const doc=await ref.get();
+  const v=(doc.data().modeVersion||0)+1;
+
+  await ref.update({
+    mode:document.getElementById("modeSelect").value,
+    called:[],
+    modeVersion:v
+  });
+
+  document.getElementById("lastCall").innerText="Mode changed — new game started";
 }
 
 async function callRandom(){
   const ref=db.collection("game").doc("state");
   const doc=await ref.get();
   const d=doc.data();
+
   const pool=d.mode==="numbers"
     ? Array.from({length:75},(_,i)=>i+1)
-    : words;
+    : WORDS;
 
   const remaining=pool.filter(x=>!d.called.includes(x));
   if(!remaining.length) return alert("All called!");
@@ -127,10 +141,10 @@ async function callRandom(){
 }
 
 db.collection("players").where("bingo","==",true)
-.onSnapshot(snap=>{
+.onSnapshot(s=>{
   const ul=document.getElementById("winners");
-  ul.innerHTML=snap.empty?"<li>No winners yet</li>":"";
-  snap.forEach(d=>{
+  ul.innerHTML=s.empty?"<li>No winners yet</li>":"";
+  s.forEach(d=>{
     const li=document.createElement("li");
     li.innerText=`${d.id} — ${d.data().time}`;
     ul.appendChild(li);
@@ -138,10 +152,10 @@ db.collection("players").where("bingo","==",true)
 });
 
 db.collection("players").where("nearBingo","==",true)
-.onSnapshot(snap=>{
+.onSnapshot(s=>{
   const ul=document.getElementById("nearList");
-  ul.innerHTML=snap.empty?"<li>No one close yet</li>":"";
-  snap.forEach(d=>{
+  ul.innerHTML=s.empty?"<li>No one close yet</li>":"";
+  s.forEach(d=>{
     const li=document.createElement("li");
     li.innerText=`${d.id} → ${d.data().nearLine}`;
     ul.appendChild(li);
@@ -150,7 +164,7 @@ db.collection("players").where("nearBingo","==",true)
 
 async function resetGame(){
   const players=await db.collection("players").get();
-  players.forEach(d=>d.ref.delete());
+  players.forEach(p=>p.ref.delete());
 
   const ref=db.collection("game").doc("state");
   const doc=await ref.get();
@@ -162,4 +176,3 @@ async function resetGame(){
 </script>
 </body>
 </html>
-
