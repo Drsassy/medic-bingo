@@ -177,19 +177,27 @@ db.collection("game").doc("state").onSnapshot(doc => {
   const data = doc.data();
   calledWords = data.calledWords || [];
 
-  // 🔄 auto reset player when admin resets
-  if (lastReset !== null && data.resetCounter !== lastReset) {
+  // Only react if resetCounter exists AND increases
+  if (
+    typeof data.resetCounter === "number" &&
+    lastReset !== null &&
+    data.resetCounter > lastReset
+  ) {
     alert("The game has been reset by the host.");
     location.reload();
   }
 
-  lastReset = data.resetCounter || 0;
+  lastReset = typeof data.resetCounter === "number"
+    ? data.resetCounter
+    : lastReset;
+
   render();
 });
 </script>
 
 </body>
 </html>
+
 
 
 
