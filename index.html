@@ -2,83 +2,147 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Medic Bingo Classic</title>
+<title>Medic Bingo</title>
 
 <style>
 body {
-  font-family: Arial, sans-serif;
-  background: #f4fbfa;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: linear-gradient(135deg, #eaf6f6, #ffffff);
+  padding: 30px;
   text-align: center;
-  padding: 20px;
+  color: #333;
 }
-h1 { color: #c62828; }
-input, button {
-  padding: 8px;
+
+h1 {
+  color: #b71c1c;
+  margin-bottom: 5px;
+}
+
+.subtitle {
+  color: #555;
+  margin-bottom: 25px;
+}
+
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 25px;
+  margin: 0 auto 20px;
+  max-width: 520px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+}
+
+input {
+  padding: 12px;
   font-size: 16px;
-  margin: 5px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  width: 100%;
+  max-width: 320px;
 }
+
+button {
+  margin-top: 15px;
+  padding: 12px 22px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  background: #b71c1c;
+  color: white;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  background: #d32f2f;
+  transform: translateY(-1px);
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(5, 100px);
-  gap: 8px;
+  gap: 10px;
   justify-content: center;
   margin-top: 20px;
 }
+
 .cell {
   background: #fff;
   border: 2px solid #333;
-  border-radius: 8px;
+  border-radius: 12px;
+  height: 85px;
   padding: 6px;
-  min-height: 70px;
 
+  font-size: 11px;
   font-weight: bold;
-  font-size: 12px;
   line-height: 1.1;
-  text-align: center;
 
   display: flex;
   align-items: center;
   justify-content: center;
+  text-align: center;
 
-  word-wrap: break-word;
+  word-break: break-word;
   white-space: normal;
 
-  opacity: 0.5;
+  opacity: 0.4;
+  transition: all 0.15s ease;
 }
-.cell.active { cursor: pointer; opacity: 1; }
-.cell.marked { background: #c62828; color: white; }
+
+.cell.active {
+  opacity: 1;
+  cursor: pointer;
+}
+
+.cell.marked {
+  background: #b71c1c;
+  color: white;
+  border-color: #b71c1c;
+}
+
+.footer {
+  margin-top: 25px;
+  color: #666;
+  font-size: 13px;
+}
 </style>
 </head>
 
 <body>
 
-<h1>🩺 Medic Bingo Classic</h1>
-<p>Enter your Discord name</p>
+<h1>🩺 Medic Bingo</h1>
+<p class="subtitle">Mark squares only when the host calls them</p>
 
-<input id="name" placeholder="Discord Name">
-<br>
-<button onclick="startGame()">Get My Bingo Card</button>
+<div class="card" id="loginCard">
+  <input id="name" placeholder="Enter your Discord name">
+  <br>
+  <button onclick="startGame()">Get My Bingo Card</button>
+</div>
 
-<div id="game" style="display:none;">
+<div class="card" id="game" style="display:none;">
   <h2 id="playerName"></h2>
   <div class="grid" id="grid"></div>
-  <br>
   <button onclick="claimBingo()">🎉 Claim Bingo</button>
 </div>
 
+<p class="footer">Hosted by Medic Bingo Classic</p>
+
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script>
-/* 🔥 PASTE YOUR firebaseConfig BELOW (REPLACE THIS ONE) */
+/* 🔥 FIREBASE CONFIG */
 const firebaseConfig = {
-    apiKey: "AIzaSyDASEWy-s1lBVTiXiJWx7KRvlk_IB1mN24",
-    authDomain: "medic-bingo.firebaseapp.com",
-    projectId: "medic-bingo",
-    storageBucket: "medic-bingo.firebasestorage.app",
-    messagingSenderId: "677419756545",
-    appId: "1:677419756545:web:099e1928113290c587a400"
-  };
+  apiKey: "PASTE_YOUR_KEY",
+  authDomain: "PASTE_YOUR_DOMAIN",
+  projectId: "PASTE_YOUR_PROJECT_ID",
+  storageBucket: "PASTE_YOUR_BUCKET",
+  messagingSenderId: "PASTE_YOUR_SENDER_ID",
+  appId: "PASTE_YOUR_APP_ID"
+};
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
@@ -95,6 +159,7 @@ const bingoWords = [
 let card = [];
 let marked = [];
 let calledWords = [];
+let lastReset = null;
 
 function generateCard() {
   let shuffled = [...bingoWords].sort(() => 0.5 - Math.random());
@@ -110,20 +175,22 @@ async function startGame() {
   const gameDoc = await db.collection("game").doc("state").get();
   calledWords = gameDoc.exists ? gameDoc.data().calledWords : [];
 
-  const doc = await db.collection("players").doc(name).get();
-  if (doc.exists) {
-    card = doc.data().card;
-    marked = doc.data().marked;
+  const ref = db.collection("players").doc(name);
+  const snap = await ref.get();
+
+  if (snap.exists) {
+    card = snap.data().card;
+    marked = snap.data().marked;
   } else {
     card = generateCard();
     marked = Array(25).fill(false);
     marked[12] = true;
-    await db.collection("players").doc(name).set({
-      card, marked, bingo:false, time:null
-    });
+
+    await ref.set({ card, marked, bingo:false, time:null });
   }
 
   document.getElementById("playerName").innerText = name;
+  document.getElementById("loginCard").style.display = "none";
   document.getElementById("game").style.display = "block";
   render();
 }
@@ -133,33 +200,40 @@ function render() {
   grid.innerHTML = "";
 
   card.forEach((v,i)=>{
-    const c = document.createElement("div");
-    const active = calledWords.includes(v) || v==="🩺 FREE";
-    c.className = "cell" + (marked[i]?" marked":"") + (active?" active":"");
-    c.innerText = v;
-    if(active){
-      c.onclick = async ()=>{
+    const cell = document.createElement("div");
+    const active = calledWords.includes(v) || v === "🩺 FREE";
+
+    cell.className = "cell" +
+      (marked[i] ? " marked" : "") +
+      (active ? " active" : "");
+
+    cell.innerText = v;
+
+    if (active) {
+      cell.onclick = async () => {
         marked[i] = !marked[i];
         render();
         const name = document.getElementById("playerName").innerText;
-        await db.collection("players").doc(name).update({marked});
+        await db.collection("players").doc(name).update({ marked });
       };
     }
-    grid.appendChild(c);
+
+    grid.appendChild(cell);
   });
 }
 
 function checkBingo() {
-  const wins=[[0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],
-  [15,16,17,18,19],[20,21,22,23,24],
-  [0,5,10,15,20],[1,6,11,16,21],
-  [2,7,12,17,22],[3,8,13,18,23],
-  [4,9,14,19,24],[0,6,12,18,24],[4,8,12,16,20]];
-  return wins.some(w=>w.every(i=>marked[i]));
+  const wins = [
+    [0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],
+    [15,16,17,18,19],[20,21,22,23,24],
+    [0,5,10,15,20],[1,6,11,16,21],
+    [2,7,12,17,22],[3,8,13,18,23],
+    [4,9,14,19,24],[0,6,12,18,24],[4,8,12,16,20]
+  ];
+  return wins.some(w => w.every(i => marked[i]));
 }
 
-async function claimBingo(){
-  // 🔒 prevent cheating
+async function claimBingo() {
   if (!checkBingo()) {
     alert("❌ You don't have Bingo yet!");
     return;
@@ -169,8 +243,7 @@ async function claimBingo(){
   const ref = db.collection("players").doc(name);
   const snap = await ref.get();
 
-  // prevent double claims
-  if (snap.exists && snap.data().bingo === true) {
+  if (snap.exists && snap.data().bingo) {
     alert("⚠️ You already claimed Bingo.");
     return;
   }
@@ -183,15 +256,12 @@ async function claimBingo(){
   alert("🎉 Bingo claimed!");
 }
 
-let lastReset = null;
-
+/* 🔄 GAME STATE LISTENER */
 db.collection("game").doc("state").onSnapshot(doc => {
   if (!doc.exists) return;
-
   const data = doc.data();
   calledWords = data.calledWords || [];
 
-  // Only react if resetCounter exists AND increases
   if (
     typeof data.resetCounter === "number" &&
     lastReset !== null &&
@@ -211,10 +281,3 @@ db.collection("game").doc("state").onSnapshot(doc => {
 
 </body>
 </html>
-
-
-
-
-
-
-
