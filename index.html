@@ -7,48 +7,48 @@
 <style>
 body {
   font-family: "Segoe UI", Arial, sans-serif;
-  background: linear-gradient(135deg, #eaf6f6, #ffffff);
+  background: linear-gradient(135deg,#eef2f7,#ffffff);
   padding: 30px;
   text-align: center;
 }
 .card {
   background: white;
-  border-radius: 16px;
-  padding: 22px;
-  margin: 0 auto 20px;
-  max-width: 720px;
-  box-shadow: 0 12px 30px rgba(0,0,0,.1);
+  border-radius: 18px;
+  padding: 26px;
+  margin: 0 auto 22px;
+  max-width: 760px;
+  box-shadow: 0 15px 40px rgba(0,0,0,.12);
 }
 .grid {
-  display: grid;
-  grid-template-columns: repeat(5,100px);
-  gap: 10px;
-  justify-content: center;
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:12px;
 }
 .cell {
-  border: 2px solid #333;
-  border-radius: 12px;
-  height: 85px;
-  font-size: 11px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: .35;
+  border:2px solid #333;
+  border-radius:14px;
+  min-height:90px;
+  font-size:12px;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  opacity:.35;
 }
-.cell.active { opacity: 1; cursor: pointer; }
-.cell.marked { background: #b71c1c; color: white; }
+.cell.active { opacity:1; cursor:pointer; }
+.cell.marked { background:#c62828; color:white; }
 .called span {
-  background: #f2f2f2;
-  padding: 6px 10px;
-  margin: 4px;
-  border-radius: 8px;
-  display: inline-block;
+  background:#fff;
+  padding:8px 14px;
+  margin:6px;
+  border-radius:999px;
+  display:inline-block;
+  box-shadow:0 6px 14px rgba(0,0,0,.15);
 }
 #near {
-  color: #d32f2f;
-  font-weight: bold;
-  margin: 10px;
+  color:#c62828;
+  font-weight:bold;
+  margin:12px 0;
 }
 </style>
 </head>
@@ -63,7 +63,7 @@ body {
     <option value="words">Medic Words</option>
     <option value="numbers">Numbers</option>
   </select><br><br>
-  <button onclick="start()">Get Bingo Card</button>
+  <button onclick="start()">🎟️ Get Bingo Card</button>
 </div>
 
 <div class="card" id="game" style="display:none;">
@@ -120,47 +120,48 @@ const LINES = [
   {i:[4,8,12,16,20],n:"Diagonal ↙"}
 ];
 
-let card=[], marked=[], called=[], cardMode="", lastReset=null;
+let card=[], marked=[], called=[], lastReset=null;
 
-function generateCard(){
-  const pool = cardMode === "numbers"
+function generateCard(mode){
+  const pool = mode==="numbers"
     ? Array.from({length:75},(_,i)=>i+1)
     : WORDS;
 
-  const c = [...pool].sort(()=>0.5-Math.random()).slice(0,25);
-  c[12] = "FREE";
+  const c=[...pool].sort(()=>0.5-Math.random()).slice(0,25);
+  c[12]="FREE";
   return c;
 }
 
 async function start(){
-  const name = document.getElementById("name").value.trim();
-  cardMode = document.getElementById("mode").value;
+  const name=nameInput.value.trim();
+  const mode=modeSelect.value;
   if(!name) return alert("Enter name");
 
-  card = generateCard();
+  card = generateCard(mode);
   marked = Array(25).fill(false);
-  marked[12] = true;
+  marked[12]=true;
 
   await db.collection("players").doc(name).set({
-    card, marked, cardMode, bingo:false, nearBingo:false
+    card, marked, cardMode:mode,
+    bingo:false, nearBingo:false
   });
 
-  document.getElementById("player").innerText = name;
-  document.getElementById("login").style.display = "none";
-  document.getElementById("game").style.display = "block";
+  player.innerText=name;
+  login.style.display="none";
+  game.style.display="block";
   render();
 }
 
 function render(){
-  grid.innerHTML = "";
+  grid.innerHTML="";
   card.forEach((v,i)=>{
     const active = called.includes(v) || v==="FREE";
-    const c = document.createElement("div");
-    c.className = "cell" + (marked[i]?" marked":"") + (active?" active":"");
-    c.innerText = v;
+    const c=document.createElement("div");
+    c.className="cell"+(marked[i]?" marked":"")+(active?" active":"");
+    c.innerText=v;
     if(active){
-      c.onclick = async()=>{
-        marked[i] = !marked[i];
+      c.onclick=async()=>{
+        marked[i]=!marked[i];
         render();
         await db.collection("players").doc(player.innerText).update({marked});
       };
@@ -168,20 +169,18 @@ function render(){
     grid.appendChild(c);
   });
 
-  calledList.innerHTML = called.map(x=>`<span>${x}</span>`).join("");
+  called.innerHTML = called.map(x=>`<span>${x}</span>`).join("");
   updateNear();
 }
 
 function updateNear(){
-  let near=false, line="";
+  let near=false,line="";
   LINES.forEach(l=>{
     if(l.i.filter(i=>marked[i]).length===4){
       near=true; line=l.n;
     }
   });
-
   nearDiv.innerText = near ? `⚠️ One away on ${line}!` : "";
-
   db.collection("players").doc(player.innerText)
     .update({nearBingo:near, nearLine:line});
 }
@@ -191,15 +190,16 @@ function checkBingo(){
 }
 
 async function claim(){
-  if(!checkBingo()) return alert("No Bingo yet");
+  if(!checkBingo()) return alert("No bingo yet");
   await db.collection("players").doc(player.innerText)
     .update({bingo:true, time:new Date().toISOString()});
   alert("Bingo claimed!");
 }
 
+// 🔴 THIS IS WHAT MAKES "CALLED SO FAR" WORK
 db.collection("game").doc("state").onSnapshot(doc=>{
   if(!doc.exists) return;
-  const d = doc.data();
+  const d=doc.data();
   called = d.called || [];
 
   if(lastReset!==null && d.resetCounter>lastReset){
