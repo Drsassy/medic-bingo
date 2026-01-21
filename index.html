@@ -5,49 +5,49 @@
 <title>Medic Bingo</title>
 
 <style>
-body {
+body{
   font-family:"Segoe UI",Arial,sans-serif;
   background:linear-gradient(135deg,#eaf6f6,#fff);
   padding:30px;
   text-align:center;
 }
-.card {
+.card{
   background:white;
-  border-radius:14px;
+  border-radius:16px;
   padding:22px;
   margin:0 auto 20px;
-  max-width:650px;
-  box-shadow:0 10px 25px rgba(0,0,0,.1);
+  max-width:700px;
+  box-shadow:0 12px 30px rgba(0,0,0,.1);
 }
-.grid {
+.grid{
   display:grid;
   grid-template-columns:repeat(5,100px);
   gap:10px;
   justify-content:center;
 }
-.cell {
+.cell{
   border:2px solid #333;
-  border-radius:10px;
+  border-radius:12px;
   height:85px;
   font-size:11px;
   font-weight:bold;
   display:flex;
   align-items:center;
   justify-content:center;
-  opacity:.4;
+  opacity:.35;
 }
-.cell.active {opacity:1;cursor:pointer;}
-.cell.marked {background:#b71c1c;color:white;}
-.calledBox span {
+.cell.active{opacity:1;cursor:pointer;}
+.cell.marked{background:#b71c1c;color:white;}
+.called span{
   display:inline-block;
   background:#f2f2f2;
   padding:6px 10px;
   margin:4px;
-  border-radius:6px;
+  border-radius:8px;
   font-weight:bold;
 }
-#nearBanner {
-  margin-top:15px;
+#nearBanner{
+  margin:10px 0;
   font-weight:bold;
   color:#d32f2f;
 }
@@ -74,7 +74,7 @@ body {
 
 <div class="card">
   <h3>📢 Called So Far</h3>
-  <div class="calledBox" id="calledList"></div>
+  <div class="called" id="calledList"></div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -96,10 +96,11 @@ const db=firebase.firestore();
 db.collection("game").doc("state").set({
   called:[],
   resetCounter:0,
-  mode:"words"
+  mode:"words",
+  modeVersion:0
 },{merge:true});
 
-const words=[
+const WORDS=[
   "Stethoscope","CPR","Bandages","IV Drip","Ambulance",
   "Trauma Kit","Scrubs","Vital Signs","Code Blue","Defibrillator",
   "Syringe","First Responder","Triage","Pulse Check","Oxygen Mask",
@@ -110,26 +111,26 @@ const words=[
 ];
 
 const LINES=[
-  {idx:[0,1,2,3,4],name:"Top Row"},
-  {idx:[5,6,7,8,9],name:"Second Row"},
-  {idx:[10,11,12,13,14],name:"Middle Row"},
-  {idx:[15,16,17,18,19],name:"Fourth Row"},
-  {idx:[20,21,22,23,24],name:"Bottom Row"},
-  {idx:[0,5,10,15,20],name:"Column B"},
-  {idx:[1,6,11,16,21],name:"Column I"},
-  {idx:[2,7,12,17,22],name:"Column N"},
-  {idx:[3,8,13,18,23],name:"Column G"},
-  {idx:[4,9,14,19,24],name:"Column O"},
-  {idx:[0,6,12,18,24],name:"Diagonal ↘"},
-  {idx:[4,8,12,16,20],name:"Diagonal ↙"}
+  {i:[0,1,2,3,4],n:"Top Row"},
+  {i:[5,6,7,8,9],n:"Second Row"},
+  {i:[10,11,12,13,14],n:"Middle Row"},
+  {i:[15,16,17,18,19],n:"Fourth Row"},
+  {i:[20,21,22,23,24],n:"Bottom Row"},
+  {i:[0,5,10,15,20],n:"Column B"},
+  {i:[1,6,11,16,21],n:"Column I"},
+  {i:[2,7,12,17,22],n:"Column N"},
+  {i:[3,8,13,18,23],n:"Column G"},
+  {i:[4,9,14,19,24],n:"Column O"},
+  {i:[0,6,12,18,24],n:"Diagonal ↘"},
+  {i:[4,8,12,16,20],n:"Diagonal ↙"}
 ];
 
-let card=[],marked=[],called=[],mode="words",lastReset=null;
+let card=[],marked=[],called=[],mode="words",lastReset=null,modeVer=null;
 
 function generateCard(){
   const pool=mode==="numbers"
     ? Array.from({length:75},(_,i)=>i+1)
-    : words;
+    : WORDS;
   const c=[...pool].sort(()=>0.5-Math.random()).slice(0,25);
   c[12]="FREE";
   return c;
@@ -145,7 +146,7 @@ async function startGame(){
   if(snap.exists){
     card=snap.data().card;
     marked=snap.data().marked;
-  } else {
+  }else{
     card=generateCard();
     marked=Array(25).fill(false);
     marked[12]=true;
@@ -177,18 +178,19 @@ function render(){
     g.appendChild(c);
   });
 
-  document.getElementById("calledList").innerHTML =
+  document.getElementById("calledList").innerHTML=
     called.map(x=>`<span>${x}</span>`).join("");
 
-  updateNearBingo();
+  updateNear();
 }
 
-function updateNearBingo(){
+function updateNear(){
   const name=document.getElementById("playerName").innerText;
   let near=false,line="";
   LINES.forEach(l=>{
-    const count=l.idx.filter(i=>marked[i]).length;
-    if(count===4){near=true;line=l.name;}
+    if(l.i.filter(i=>marked[i]).length===4){
+      near=true; line=l.n;
+    }
   });
 
   document.getElementById("nearBanner").innerText=
@@ -199,7 +201,7 @@ function updateNearBingo(){
 }
 
 function checkBingo(){
-  return LINES.some(l=>l.idx.every(i=>marked[i]));
+  return LINES.some(l=>l.i.every(i=>marked[i]));
 }
 
 async function claimBingo(){
@@ -216,14 +218,19 @@ db.collection("game").doc("state").onSnapshot(doc=>{
   called=d.called||[];
   mode=d.mode||"words";
 
+  if(modeVer!==null && d.modeVersion!==modeVer){
+    location.reload();
+  }
+
   if(lastReset!==null && d.resetCounter>lastReset){
     alert("Game reset");
     location.reload();
   }
+
+  modeVer=d.modeVersion;
   lastReset=d.resetCounter;
   render();
 });
 </script>
 </body>
 </html>
-
