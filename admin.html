@@ -9,37 +9,75 @@ body {
   font-family: Arial, sans-serif;
   padding: 20px;
 }
+
 button {
   padding: 8px 14px;
   font-size: 16px;
   margin: 5px 0;
   cursor: pointer;
 }
+
+#adminPanel {
+  display: none;
+}
 </style>
 </head>
 
 <body>
 
-<h1>🩺 Medic Bingo – Admin Panel</h1>
+<h1>🩺 Medic Bingo – Admin Login</h1>
 
-<h2>🎲 Call Random Word</h2>
-<button onclick="callRandomWord()">Call Random Word</button>
-<p id="lastWord"><em>No word called yet</em></p>
+<div id="login">
+  <p>Username:</p>
+  <input id="username" type="text">
 
-<h2>🏆 Winners (Live)</h2>
-<ul id="winners">
-  <li>No winners yet</li>
-</ul>
+  <p>Password:</p>
+  <input id="password" type="password">
 
-<h2>🔁 Reset Game</h2>
-<button onclick="resetGame()">RESET GAME</button>
+  <br><br>
+  <button onclick="login()">Login</button>
+  <p id="loginError" style="color:red;"></p>
+</div>
+
+<div id="adminPanel">
+  <h1>🩺 Medic Bingo – Admin Panel</h1>
+
+  <h2>🎲 Call Random Word</h2>
+  <button onclick="callRandomWord()">Call Random Word</button>
+  <p id="lastWord"><em>No word called yet</em></p>
+
+  <h2>🏆 Winners (Live)</h2>
+  <ul id="winners">
+    <li>No winners yet</li>
+  </ul>
+
+  <h2>🔁 Reset Game</h2>
+  <button onclick="resetGame()">RESET GAME</button>
+</div>
 
 <!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script>
-/* 🔥 REPLACE THIS WITH YOUR REAL firebaseConfig */
+/* 🔐 ADMIN CREDENTIALS */
+const ADMIN_USER = "sassy123";
+const ADMIN_PASS = "sassyontop";
+
+/* 🔐 LOGIN FUNCTION */
+function login() {
+  const u = document.getElementById("username").value;
+  const p = document.getElementById("password").value;
+
+  if (u === ADMIN_USER && p === ADMIN_PASS) {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("adminPanel").style.display = "block";
+  } else {
+    document.getElementById("loginError").innerText = "Invalid username or password";
+  }
+}
+
+/* 🔥 FIREBASE CONFIG — REPLACE WITH YOUR REAL ONE */
 const firebaseConfig = {
     apiKey: "AIzaSyDASEWy-s1lBVTiXiJWx7KRvlk_IB1mN24",
     authDomain: "medic-bingo.firebaseapp.com",
@@ -52,7 +90,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// ✅ Ensure game state document exists
+/* Ensure game state exists */
 db.collection("game").doc("state").set({
   calledWords: [],
   resetCounter: 0
@@ -69,14 +107,13 @@ const bingoWords = [
   "Thermometer","AED","Patient Transport"
 ];
 
-/* 🎲 CALL RANDOM WORD (NO REPEATS) */
+/* 🎲 CALL RANDOM WORD */
 async function callRandomWord() {
   const ref = db.collection("game").doc("state");
   const doc = await ref.get();
+  const called = doc.exists ? doc.data().calledWords : [];
 
-  let called = doc.exists ? doc.data().calledWords : [];
   const remaining = bingoWords.filter(w => !called.includes(w));
-
   if (remaining.length === 0) {
     alert("All words have been called!");
     return;
@@ -89,11 +126,10 @@ async function callRandomWord() {
   document.getElementById("lastWord").innerText = "Last called: " + word;
 }
 
-// 🏆 LIVE WINNER LISTENER (FINAL, STABLE)
+/* 🏆 LIVE WINNER LIST */
 db.collection("players")
   .where("bingo", "==", true)
   .onSnapshot(snapshot => {
-
     const list = document.getElementById("winners");
     list.innerHTML = "";
 
@@ -103,9 +139,8 @@ db.collection("players")
     }
 
     snapshot.forEach(doc => {
-      const data = doc.data();
       const li = document.createElement("li");
-      li.textContent = `${doc.id} — ${data.time}`;
+      li.innerText = `${doc.id} — ${doc.data().time}`;
       list.appendChild(li);
     });
   });
@@ -114,11 +149,9 @@ db.collection("players")
 async function resetGame() {
   if (!confirm("Are you sure you want to reset the entire game?")) return;
 
-  // delete all players
   const players = await db.collection("players").get();
   players.forEach(doc => doc.ref.delete());
 
-  // increment reset counter
   const ref = db.collection("game").doc("state");
   const doc = await ref.get();
   const resetCounter = doc.exists && doc.data().resetCounter
@@ -128,16 +161,12 @@ async function resetGame() {
   await ref.set({
     calledWords: [],
     resetCounter: resetCounter
-  });
+  }, { merge: true });
 
   document.getElementById("lastWord").innerText = "No word called yet";
-  alert("Game has been reset");
+  alert("Game reset");
 }
 </script>
 
 </body>
 </html>
-
-
-
-
