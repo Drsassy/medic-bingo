@@ -7,40 +7,39 @@
 <style>
 body {
   font-family: "Segoe UI", Arial, sans-serif;
-  background: linear-gradient(135deg, #eaf6f6, #ffffff);
+  background: linear-gradient(135deg,#eef2f7,#ffffff);
   padding: 30px;
 }
-h1, h2 { color: #b71c1c; }
+h1,h2 { color:#c62828; }
 .card {
   background: white;
-  border-radius: 16px;
-  padding: 22px;
-  margin-bottom: 20px;
+  border-radius: 18px;
+  padding: 24px;
+  margin-bottom: 22px;
   max-width: 760px;
-  box-shadow: 0 12px 30px rgba(0,0,0,.1);
+  box-shadow: 0 15px 40px rgba(0,0,0,.12);
 }
-button, select {
-  padding: 12px 18px;
-  font-size: 15px;
-  border-radius: 10px;
+button,select {
+  padding: 14px 20px;
+  border-radius: 12px;
   border: none;
-  cursor: pointer;
   font-weight: bold;
+  cursor: pointer;
 }
-button { background: #b71c1c; color: white; }
-button.reset { background: #000; }
+button { background:#c62828; color:white; }
+button.reset { background:#000; }
 ul li {
-  background: #f7fdfc;
-  padding: 10px;
-  border-radius: 8px;
-  margin-bottom: 6px;
+  background:#f7fdfc;
+  padding:10px;
+  border-radius:10px;
+  margin-bottom:6px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🩺 Medic Bingo — Admin Panel</h1>
+<h1>🩺 Medic Bingo — Admin</h1>
 
 <div class="card">
   <h2>🎮 Calling Mode</h2>
@@ -52,18 +51,18 @@ ul li {
 
 <div class="card">
   <h2>🎲 Call Next</h2>
-  <button onclick="callNext()">Call</button>
+  <button onclick="callNext()">Call Item</button>
   <p id="lastCall"><em>Nothing called yet</em></p>
 </div>
 
 <div class="card">
   <h2>🏆 Winners</h2>
-  <ul id="winners"><li>No winners yet</li></ul>
+  <ul id="winners"><li>None yet</li></ul>
 </div>
 
 <div class="card">
   <h2>🔥 Close to Bingo</h2>
-  <ul id="near"><li>No one close yet</li></ul>
+  <ul id="near"><li>No one close</li></ul>
 </div>
 
 <div class="card">
@@ -102,14 +101,14 @@ db.collection("game").doc("state").set({
   called: [],
   callMode: "words",
   resetCounter: 0
-}, { merge: true });
+}, { merge:true });
 
 async function setCallMode() {
   await db.collection("game").doc("state").update({
-    callMode: document.getElementById("callMode").value,
+    callMode: callMode.value,
     called: []
   });
-  document.getElementById("lastCall").innerText = "Calling mode switched";
+  lastCall.innerText = "Calling mode switched";
 }
 
 async function callNext() {
@@ -124,23 +123,27 @@ async function callNext() {
   if (!remaining.length) return alert("All items called");
 
   const pick = remaining[Math.floor(Math.random()*remaining.length)];
-  await ref.update({ called: [...data.called, pick] });
+  await ref.update({ called:[...data.called, pick] });
 
-  document.getElementById("lastCall").innerText = "Last called: " + pick;
+  lastCall.innerText = "Last called: " + pick;
 }
 
+// Winners
 db.collection("players").where("bingo","==",true)
 .onSnapshot(snap=>{
-  const ul = document.getElementById("winners");
-  ul.innerHTML = snap.empty ? "<li>No winners yet</li>" : "";
-  snap.forEach(d => ul.innerHTML += `<li>${d.id}</li>`);
+  winners.innerHTML = snap.empty ? "<li>None yet</li>" : "";
+  snap.forEach(d => {
+    winners.innerHTML += `<li>${d.id}</li>`;
+  });
 });
 
+// Close to bingo
 db.collection("players").where("nearBingo","==",true)
 .onSnapshot(snap=>{
-  const ul = document.getElementById("near");
-  ul.innerHTML = snap.empty ? "<li>No one close yet</li>" : "";
-  snap.forEach(d => ul.innerHTML += `<li>${d.id} → ${d.data().nearLine}</li>`);
+  near.innerHTML = snap.empty ? "<li>No one close</li>" : "";
+  snap.forEach(d => {
+    near.innerHTML += `<li>${d.id} → ${d.data().nearLine}</li>`;
+  });
 });
 
 async function resetGame() {
