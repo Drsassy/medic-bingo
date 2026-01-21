@@ -109,10 +109,21 @@ db.collection("players")
 async function resetGame() {
   if (!confirm("Are you sure you want to reset the entire game?")) return;
 
+  // delete all players
   const players = await db.collection("players").get();
   players.forEach(doc => doc.ref.delete());
 
-  await db.collection("game").doc("state").set({ calledWords: [] });
+  // increment reset counter
+  const ref = db.collection("game").doc("state");
+  const doc = await ref.get();
+  const resetCounter = doc.exists && doc.data().resetCounter
+    ? doc.data().resetCounter + 1
+    : 1;
+
+  await ref.set({
+    calledWords: [],
+    resetCounter: resetCounter
+  });
 
   document.getElementById("lastWord").innerText = "No word called yet";
   alert("Game has been reset");
@@ -121,4 +132,5 @@ async function resetGame() {
 
 </body>
 </html>
+
 
