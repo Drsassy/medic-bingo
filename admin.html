@@ -6,15 +6,79 @@
 
 <style>
 body {
-  font-family: Arial, sans-serif;
-  padding: 20px;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: linear-gradient(135deg, #eaf6f6, #ffffff);
+  padding: 30px;
+  color: #333;
+}
+
+h1 {
+  color: #b71c1c;
+  margin-bottom: 5px;
+}
+
+h2 {
+  color: #b71c1c;
+  margin-top: 0;
+}
+
+.subtitle {
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.card {
+  background: white;
+  border-radius: 14px;
+  padding: 22px;
+  margin-bottom: 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  max-width: 650px;
 }
 
 button {
-  padding: 8px 14px;
-  font-size: 16px;
-  margin: 5px 0;
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: bold;
+  border-radius: 10px;
+  border: none;
   cursor: pointer;
+  background: #b71c1c;
+  color: white;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  background: #d32f2f;
+  transform: translateY(-1px);
+}
+
+button.reset {
+  background: #000;
+}
+
+input {
+  padding: 12px;
+  font-size: 15px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 10px;
+}
+
+#winners li {
+  background: #f7fdfc;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+#lastWord {
+  font-size: 18px;
+  font-weight: bold;
+  margin-top: 10px;
 }
 
 #adminPanel {
@@ -25,34 +89,42 @@ button {
 
 <body>
 
-<h1>🩺 Medic Bingo – Admin Login</h1>
+<h1>🩺 Medic Bingo</h1>
+<p class="subtitle">Admin Control Panel</p>
 
-<div id="login">
-  <p>Username:</p>
-  <input id="username" type="text">
+<!-- 🔐 LOGIN -->
+<div id="login" class="card">
+  <h2>Admin Login</h2>
 
-  <p>Password:</p>
-  <input id="password" type="password">
+  <input id="username" type="text" placeholder="Username">
+  <input id="password" type="password" placeholder="Password">
 
-  <br><br>
+  <br>
   <button onclick="login()">Login</button>
   <p id="loginError" style="color:red;"></p>
 </div>
 
+<!-- 🎛 ADMIN PANEL -->
 <div id="adminPanel">
-  <h1>🩺 Medic Bingo – Admin Panel</h1>
 
-  <h2>🎲 Call Random Word</h2>
-  <button onclick="callRandomWord()">Call Random Word</button>
-  <p id="lastWord"><em>No word called yet</em></p>
+  <div class="card">
+    <h2>🎲 Call Random Word</h2>
+    <button onclick="callRandomWord()">Call Random Word</button>
+    <p id="lastWord"><em>No word called yet</em></p>
+  </div>
 
-  <h2>🏆 Winners (Live)</h2>
-  <ul id="winners">
-    <li>No winners yet</li>
-  </ul>
+  <div class="card">
+    <h2>🏆 Winners (Live)</h2>
+    <ul id="winners">
+      <li>No winners yet</li>
+    </ul>
+  </div>
 
-  <h2>🔁 Reset Game</h2>
-  <button onclick="resetGame()">RESET GAME</button>
+  <div class="card">
+    <h2>🔁 Reset Game</h2>
+    <button class="reset" onclick="resetGame()">RESET GAME</button>
+  </div>
+
 </div>
 
 <!-- Firebase SDKs -->
@@ -64,7 +136,6 @@ button {
 const ADMIN_USER = "sassy123";
 const ADMIN_PASS = "sassyontop";
 
-/* 🔐 LOGIN FUNCTION */
 function login() {
   const u = document.getElementById("username").value;
   const p = document.getElementById("password").value;
@@ -79,13 +150,13 @@ function login() {
 
 /* 🔥 FIREBASE CONFIG — REPLACE WITH YOUR REAL ONE */
 const firebaseConfig = {
-    apiKey: "AIzaSyDASEWy-s1lBVTiXiJWx7KRvlk_IB1mN24",
-    authDomain: "medic-bingo.firebaseapp.com",
-    projectId: "medic-bingo",
-    storageBucket: "medic-bingo.firebasestorage.app",
-    messagingSenderId: "677419756545",
-    appId: "1:677419756545:web:099e1928113290c587a400"
-  };
+  apiKey: "PASTE_YOUR_KEY",
+  authDomain: "PASTE_YOUR_DOMAIN",
+  projectId: "PASTE_YOUR_PROJECT_ID",
+  storageBucket: "PASTE_YOUR_BUCKET",
+  messagingSenderId: "PASTE_YOUR_SENDER_ID",
+  appId: "PASTE_YOUR_APP_ID"
+};
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
