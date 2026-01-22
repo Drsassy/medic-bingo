@@ -44,7 +44,6 @@ body {
   border-radius:999px;
   display:inline-block;
 }
-#near {color:#c62828;font-weight:bold;margin:12px;}
 </style>
 </head>
 
@@ -54,16 +53,11 @@ body {
 
 <div class="card" id="login">
   <input id="name" placeholder="Discord name"><br><br>
-  <select id="mode">
-    <option value="words">Medic Words</option>
-    <option value="numbers">Numbers</option>
-  </select><br><br>
   <button id="startBtn">🎟️ Get Bingo Card</button>
 </div>
 
 <div class="card" id="game" style="display:none;">
   <h2 id="player"></h2>
-  <div id="near"></div>
   <div class="grid" id="grid"></div>
   <br>
   <button id="claimBtn">🎉 Claim Bingo</button>
@@ -90,7 +84,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-/* 🔴 SAME LARGE WORD LIST */
+/* 🩺 WORD LIST */
 const WORDS = [
   "Stethoscope","Blood Pressure Cuff","Pulse Oximeter","Thermometer",
   "Defibrillator","AED","IV Pump","IV Drip","Syringe","Needle",
@@ -106,27 +100,19 @@ const WORDS = [
   "CPR","Intubation","Cannulation","Blood Draw",
   "Airway Management","Oxygen Therapy","Fluid Resuscitation",
   "Wound Cleaning","Suturing","Manual Ventilation",
-  "Rapid Sequence Induction","Defib Shock","Vitals Check",
-  "Pain Assessment","Neuro Check",
+  "Defib Shock","Vitals Check","Pain Assessment","Neuro Check",
 
   "Paramedic","EMT","First Responder","Charge Nurse",
   "Triage Nurse","Consultant","Registrar","Medical Student",
-  "Anaesthetist","Radiographer","Pharmacist",
 
   "Emergency Room","Resus Bay","Trauma Room","ICU",
-  "Ambulance","Helipad","Waiting Room","Operating Theatre",
-  "Radiology","CT Scanner","MRI Suite",
+  "Ambulance","Helipad","Operating Theatre",
 
-  "Code Blue","Code Red","Cardiac Arrest","Respiratory Failure",
-  "Sepsis","Stroke Alert","Major Trauma","Anaphylaxis",
-  "Hypoglycaemia","Overdose","Burns","Unconscious Patient",
+  "Code Blue","Cardiac Arrest","Sepsis","Stroke Alert",
+  "Major Trauma","Anaphylaxis","Unconscious Patient",
 
-  "Medical Chart","Drug Round","Handover","Radio Call",
-  "Patient Transfer","Consent Form","Observation Chart",
-  "Triage Tag","Time Critical","Life Support",
-
-  "Night Shift","Bleeding Control","FAST Test",
-  "Blue Light Run","Sirens On","Stabilise Patient"
+  "Medical Chart","Radio Call","Patient Transfer",
+  "Life Support","Night Shift","Blue Light Run","Sirens On"
 ];
 
 const LINES = [
@@ -141,21 +127,15 @@ let card=[], marked=[], called=[], lastReset=null;
 
 document.getElementById("startBtn").onclick = async () => {
   const name = document.getElementById("name").value.trim();
-  const mode = document.getElementById("mode").value;
-  if (!name) return alert("Enter name");
+  if(!name) return alert("Enter name");
 
-  const pool = mode==="numbers"
-    ? Array.from({length:75},(_,i)=>i+1)
-    : WORDS;
-
-  card = [...pool].sort(()=>0.5-Math.random()).slice(0,25);
+  card = [...WORDS].sort(()=>0.5-Math.random()).slice(0,25);
   card[12] = "FREE";
   marked = Array(25).fill(false);
   marked[12] = true;
 
   await db.collection("players").doc(name).set({
-    card, marked, cardMode: mode,
-    bingo:false, nearBingo:false
+    card, marked, bingo:false
   });
 
   document.getElementById("player").innerText = name;
@@ -164,18 +144,18 @@ document.getElementById("startBtn").onclick = async () => {
   render();
 };
 
-function render() {
-  const grid = document.getElementById("grid");
-  grid.innerHTML = "";
+function render(){
+  const grid=document.getElementById("grid");
+  grid.innerHTML="";
 
   card.forEach((v,i)=>{
     const active = called.includes(v) || v==="FREE";
-    const c = document.createElement("div");
-    c.className = "cell" + (marked[i]?" marked":"") + (active?" active":"");
-    c.innerText = v;
-    if (active) {
-      c.onclick = async () => {
-        marked[i] = !marked[i];
+    const c=document.createElement("div");
+    c.className="cell"+(marked[i]?" marked":"")+(active?" active":"");
+    c.innerText=v;
+    if(active){
+      c.onclick=async()=>{
+        marked[i]=!marked[i];
         render();
         await db.collection("players").doc(player.innerText).update({marked});
       };
@@ -185,25 +165,11 @@ function render() {
 
   document.getElementById("called").innerHTML =
     called.map(x=>`<span>${x}</span>`).join("");
-
-  updateNear();
-}
-
-function updateNear() {
-  let near=false;
-  LINES.forEach(l=>{
-    if(l.filter(i=>marked[i]).length===4) near=true;
-  });
-  document.getElementById("near").innerText =
-    near ? "⚠️ You are one away from Bingo!" : "";
-
-  db.collection("players").doc(player.innerText)
-    .update({nearBingo:near});
 }
 
 document.getElementById("claimBtn").onclick = async () => {
   const win = LINES.some(l=>l.every(i=>marked[i]));
-  if (!win) return alert("No bingo yet");
+  if(!win) return alert("No bingo yet");
 
   await db.collection("players").doc(player.innerText)
     .update({bingo:true,time:new Date().toISOString()});
@@ -212,11 +178,11 @@ document.getElementById("claimBtn").onclick = async () => {
 };
 
 db.collection("game").doc("state").onSnapshot(doc=>{
-  if (!doc.exists) return;
+  if(!doc.exists) return;
   const d = doc.data();
   called = d.called || [];
 
-  if (lastReset!==null && d.resetCounter>lastReset) {
+  if(lastReset!==null && d.resetCounter>lastReset){
     alert("Game reset");
     location.reload();
   }
