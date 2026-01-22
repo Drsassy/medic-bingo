@@ -5,58 +5,106 @@
 <title>Medic Bingo</title>
 
 <style>
-:root {
-  --red:#c62828;
-}
 body {
-  font-family:"Segoe UI",Arial,sans-serif;
-  background:linear-gradient(135deg,#eef2f7,#ffffff);
-  padding:30px;
-  text-align:center;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: linear-gradient(135deg, #eaf6f6, #ffffff);
+  padding: 30px;
+  text-align: center;
+  color: #333;
 }
+
+h1 {
+  color: #b71c1c;
+  margin-bottom: 5px;
+}
+
+.subtitle {
+  color: #555;
+  margin-bottom: 25px;
+}
+
 .card {
-  background:white;
-  border-radius:22px;
-  padding:28px;
-  margin:0 auto 22px;
-  max-width:760px;
-  box-shadow:0 18px 45px rgba(0,0,0,.12);
+  background: white;
+  border-radius: 16px;
+  padding: 25px;
+  margin: 0 auto 20px;
+  max-width: 520px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.1);
 }
-.grid {
-  display:grid;
-  grid-template-columns:repeat(5,1fr);
-  gap:14px;
-  margin-top:20px;
+
+input {
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  width: 100%;
+  max-width: 320px;
 }
-.cell {
-  border-radius:16px;
-  border:2px solid #333;
-  min-height:95px;
-  padding:8px;
-  font-size:12px;
-  font-weight:700;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  opacity:.35;
-  transition:.15s;
-}
-.cell.active { opacity:1; cursor:pointer; }
-.cell.marked {
-  background:var(--red);
-  color:white;
-  border-color:var(--red);
-  transform:scale(1.04);
-}
+
 button {
-  background:var(--red);
-  color:white;
-  border:none;
-  padding:14px 26px;
-  border-radius:16px;
-  font-size:16px;
-  font-weight:bold;
-  cursor:pointer;
+  margin-top: 15px;
+  padding: 12px 22px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  background: #b71c1c;
+  color: white;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  background: #d32f2f;
+  transform: translateY(-1px);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(5, 100px);
+  gap: 10px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.cell {
+  background: #fff;
+  border: 2px solid #333;
+  border-radius: 12px;
+  height: 85px;
+  padding: 6px;
+
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 1.1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+
+  word-break: break-word;
+  white-space: normal;
+
+  opacity: 0.4;
+  transition: all 0.15s ease;
+}
+
+.cell.active {
+  opacity: 1;
+  cursor: pointer;
+}
+
+.cell.marked {
+  background: #b71c1c;
+  color: white;
+  border-color: #b71c1c;
+}
+
+.footer {
+  margin-top: 25px;
+  color: #666;
+  font-size: 13px;
 }
 </style>
 </head>
@@ -64,23 +112,28 @@ button {
 <body>
 
 <h1>🩺 Medic Bingo</h1>
+<p class="subtitle">Mark squares only when the host calls them</p>
 
-<div class="card" id="login">
-  <input id="name" placeholder="Discord name"><br><br>
-  <button id="startBtn">🎟️ Get My Bingo Card</button>
+<div class="card" id="loginCard">
+  <input id="name" placeholder="Enter your Discord name">
+  <br>
+  <button onclick="startGame()">Get My Bingo Card</button>
 </div>
 
 <div class="card" id="game" style="display:none;">
-  <h2 id="player"></h2>
+  <h2 id="playerName"></h2>
   <div class="grid" id="grid"></div>
-  <br>
-  <button id="claimBtn">🎉 Claim Bingo</button>
+  <button onclick="claimBingo()">🎉 Claim Bingo</button>
 </div>
 
+<p class="footer">Hosted by Medic Bingo Classic</p>
+
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script>
+/* 🔥 FIREBASE CONFIG */
 const firebaseConfig = {
     apiKey: "AIzaSyDASEWy-s1lBVTiXiJWx7KRvlk_IB1mN24",
     authDomain: "medic-bingo.firebaseapp.com",
@@ -89,87 +142,157 @@ const firebaseConfig = {
     messagingSenderId: "677419756545",
     appId: "1:677419756545:web:099e1928113290c587a400"
   };
-firebase.initializeApp(firebaseConfig);
-const db=firebase.firestore();
 
-const WORDS = [
-  "Stethoscope","Blood Pressure Cuff","Pulse Oximeter","Thermometer",
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const bingoWords = [
+"Stethoscope","Blood Pressure Cuff","Pulse Oximeter","Thermometer",
   "Defibrillator","AED","IV Pump","IV Drip","Syringe","Needle",
   "Oxygen Tank","Oxygen Mask","Bag Valve Mask","Ventilator",
   "Heart Monitor","ECG Leads","Ultrasound","Laryngoscope",
-  "Suction Unit","Crash Cart","Gloves","Face Mask","Gown",
-  "Tourniquet","Splint","CPR","Intubation","Paramedic","EMT",
-  "Emergency Room","Ambulance","Code Blue","Cardiac Arrest",
-  "Medical Chart","Radio Call","Life Support","Night Shift",
-  "Bleeding Control","Blue Light Run","Sirens On"
+  "Suction Unit","Crash Cart",
+  "Gloves","Face Mask","Gown","Visor","Sanitiser",
+  "Disinfectant","Sharps Bin","Biohazard Bag","Sterile Field",
+  "Dressings","Bandages","Gauze","Tourniquet","Splint",
+  "Cervical Collar","Backboard",
+  "CPR","Intubation","Cannulation","Blood Draw",
+  "Airway Management","Oxygen Therapy","Fluid Resuscitation",
+  "Wound Cleaning","Suturing","Manual Ventilation",
+  "Defib Shock","Vitals Check","Pain Assessment","Neuro Check",
+  "Paramedic","EMT","First Responder","Charge Nurse",
+  "Triage Nurse","Consultant","Registrar","Medical Student",
+  "Emergency Room","Resus Bay","Trauma Room","ICU",
+  "Ambulance","Helipad","Operating Theatre",
+  "Code Blue","Cardiac Arrest","Sepsis","Stroke Alert",
+  "Major Trauma","Anaphylaxis","Unconscious Patient",
+  "Medical Chart","Radio Call","Patient Transfer",
+  "Life Support","Night Shift","Blue Light Run","Sirens On"
 ];
 
-const LINES=[
-  [0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],
-  [15,16,17,18,19],[20,21,22,23,24],
-  [0,5,10,15,20],[1,6,11,16,21],
-  [2,7,12,17,22],[3,8,13,18,23],
-  [4,9,14,19,24],[0,6,12,18,24],[4,8,12,16,20]
-];
 
-let card=[],marked=[],called=[],lastReset=null;
+let card = [];
+let marked = [];
+let calledWords = [];
+let lastReset = null;
 
-startBtn.onclick=async()=>{
-  const n=name.value.trim();
-  if(!n) return alert("Enter name");
+function generateCard() {
+  let shuffled = [...bingoWords].sort(() => 0.5 - Math.random());
+  let card = shuffled.slice(0, 25);
+  card[12] = "🩺 FREE";
+  return card;
+}
 
-  card=[...WORDS].sort(()=>0.5-Math.random()).slice(0,25);
-  card[12]="FREE";
-  marked=Array(25).fill(false);
-  marked[12]=true;
+async function startGame() {
+  const name = document.getElementById("name").value.trim();
+  if (!name) return alert("Enter your Discord name");
 
-  await db.collection("players").doc(n).set({
-    card,marked,bingo:false
-  });
+  const gameDoc = await db.collection("game").doc("state").get();
+  calledWords = gameDoc.exists ? gameDoc.data().calledWords : [];
 
-  player.innerText=n;
-  login.style.display="none";
-  game.style.display="block";
+  const ref = db.collection("players").doc(name);
+  const snap = await ref.get();
+
+  if (snap.exists) {
+    card = snap.data().card;
+    marked = snap.data().marked;
+  } else {
+    card = generateCard();
+    marked = Array(25).fill(false);
+    marked[12] = true;
+
+    await ref.set({ card, marked, bingo:false, time:null });
+  }
+
+  document.getElementById("playerName").innerText = name;
+  document.getElementById("loginCard").style.display = "none";
+  document.getElementById("game").style.display = "block";
   render();
-};
+}
 
-function render(){
-  grid.innerHTML="";
+function render() {
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+
   card.forEach((v,i)=>{
-    const active=called.includes(v)||v==="FREE";
-    const c=document.createElement("div");
-    c.className="cell"+(marked[i]?" marked":"")+(active?" active":"");
-    c.innerText=v;
-    if(active){
-      c.onclick=async()=>{
-        marked[i]=!marked[i];
+    const cell = document.createElement("div");
+    const active = calledWords.includes(v) || v === "🩺 FREE";
+
+    cell.className = "cell" +
+      (marked[i] ? " marked" : "") +
+      (active ? " active" : "");
+
+    cell.innerText = v;
+
+    if (active) {
+      cell.onclick = async () => {
+        marked[i] = !marked[i];
         render();
-        await db.collection("players").doc(player.innerText).update({marked});
+        const name = document.getElementById("playerName").innerText;
+        await db.collection("players").doc(name).update({ marked });
       };
     }
-    grid.appendChild(c);
+
+    grid.appendChild(cell);
   });
 }
 
-claimBtn.onclick=async()=>{
-  if(!LINES.some(l=>l.every(i=>marked[i])))
-    return alert("No bingo yet");
-  await db.collection("players").doc(player.innerText)
-    .update({bingo:true,time:new Date().toISOString()});
-  alert("Bingo claimed!");
-};
+function checkBingo() {
+  const wins = [
+    [0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],
+    [15,16,17,18,19],[20,21,22,23,24],
+    [0,5,10,15,20],[1,6,11,16,21],
+    [2,7,12,17,22],[3,8,13,18,23],
+    [4,9,14,19,24],[0,6,12,18,24],[4,8,12,16,20]
+  ];
+  return wins.some(w => w.every(i => marked[i]));
+}
 
-db.collection("game").doc("state").onSnapshot(doc=>{
-  if(!doc.exists) return;
-  const d=doc.data();
-  called=d.called||[];
-  if(lastReset!==null && d.resetCounter>lastReset){
-    alert("Game reset");
+async function claimBingo() {
+  if (!checkBingo()) {
+    alert("❌ You don't have Bingo yet!");
+    return;
+  }
+
+  const name = document.getElementById("playerName").innerText;
+  const ref = db.collection("players").doc(name);
+  const snap = await ref.get();
+
+  if (snap.exists && snap.data().bingo) {
+    alert("⚠️ You already claimed Bingo.");
+    return;
+  }
+
+  await ref.set({
+    bingo: true,
+    time: new Date().toISOString()
+  }, { merge: true });
+
+  alert("🎉 Bingo claimed!");
+}
+
+/* 🔄 GAME STATE LISTENER */
+db.collection("game").doc("state").onSnapshot(doc => {
+  if (!doc.exists) return;
+  const data = doc.data();
+  calledWords = data.calledWords || [];
+
+  if (
+    typeof data.resetCounter === "number" &&
+    lastReset !== null &&
+    data.resetCounter > lastReset
+  ) {
+    alert("The game has been reset by the host.");
     location.reload();
   }
-  lastReset=d.resetCounter;
+
+  lastReset = typeof data.resetCounter === "number"
+    ? data.resetCounter
+    : lastReset;
+
   render();
 });
 </script>
+
 </body>
 </html>
