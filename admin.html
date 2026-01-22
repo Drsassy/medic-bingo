@@ -168,14 +168,42 @@ db.collection("game").doc("state").set({
 }, { merge: true });
 
 /* 🩺 MEDIC BINGO WORDS */
-const bingoWords = [
-  "Stethoscope","CPR","Bandages","IV Drip","Ambulance",
-  "Trauma Kit","Scrubs","Vital Signs","Code Blue","Defibrillator",
-  "Syringe","First Responder","Triage","Pulse Check","Oxygen Mask",
-  "Heart Monitor","Gloves","Blood Pressure","Paramedic",
-  "Emergency Room","Stretchers","Radio Call","Life Support",
-  "Medical Chart","Scalpel","Face Mask","Disinfectant",
-  "Thermometer","AED","Patient Transport"
+const WORDS = [
+  "Stethoscope","Blood Pressure Cuff","Pulse Oximeter","Thermometer",
+  "Defibrillator","AED","IV Pump","IV Drip","Syringe","Needle",
+  "Oxygen Tank","Oxygen Mask","Bag Valve Mask","Ventilator",
+  "Heart Monitor","ECG Leads","Ultrasound","Laryngoscope",
+  "Suction Unit","Crash Cart",
+
+  "Gloves","Face Mask","Gown","Visor","Sanitiser",
+  "Disinfectant","Sharps Bin","Biohazard Bag","Sterile Field",
+  "Dressings","Bandages","Gauze","Tourniquet","Splint",
+  "Cervical Collar","Backboard",
+
+  "CPR","Intubation","Cannulation","Blood Draw",
+  "Airway Management","Oxygen Therapy","Fluid Resuscitation",
+  "Wound Cleaning","Suturing","Manual Ventilation",
+  "Rapid Sequence Induction","Defib Shock","Vitals Check",
+  "Pain Assessment","Neuro Check",
+
+  "Paramedic","EMT","First Responder","Charge Nurse",
+  "Triage Nurse","Consultant","Registrar","Medical Student",
+  "Anaesthetist","Radiographer","Pharmacist",
+
+  "Emergency Room","Resus Bay","Trauma Room","ICU",
+  "Ambulance","Helipad","Waiting Room","Operating Theatre",
+  "Radiology","CT Scanner","MRI Suite",
+
+  "Code Blue","Code Red","Cardiac Arrest","Respiratory Failure",
+  "Sepsis","Stroke Alert","Major Trauma","Anaphylaxis",
+  "Hypoglycaemia","Overdose","Burns","Unconscious Patient",
+
+  "Medical Chart","Drug Round","Handover","Radio Call",
+  "Patient Transfer","Consent Form","Observation Chart",
+  "Triage Tag","Time Critical","Life Support",
+
+  "Night Shift","Bleeding Control","FAST Test",
+  "Blue Light Run","Sirens On","Stabilise Patient"
 ];
 
 /* 🎲 CALL RANDOM WORD */
@@ -241,3 +269,4 @@ async function resetGame() {
 
 </body>
 </html>
+
