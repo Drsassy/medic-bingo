@@ -102,32 +102,26 @@ function login(){
 }
 
 /* 🩺 WORD LIST */
-const WORDS = [
-  "Stethoscope","Blood Pressure Cuff","Pulse Oximeter","Thermometer",
+const bingoWords = [
+"Stethoscope","Blood Pressure Cuff","Pulse Oximeter","Thermometer",
   "Defibrillator","AED","IV Pump","IV Drip","Syringe","Needle",
   "Oxygen Tank","Oxygen Mask","Bag Valve Mask","Ventilator",
   "Heart Monitor","ECG Leads","Ultrasound","Laryngoscope",
   "Suction Unit","Crash Cart",
-
   "Gloves","Face Mask","Gown","Visor","Sanitiser",
   "Disinfectant","Sharps Bin","Biohazard Bag","Sterile Field",
   "Dressings","Bandages","Gauze","Tourniquet","Splint",
   "Cervical Collar","Backboard",
-
   "CPR","Intubation","Cannulation","Blood Draw",
   "Airway Management","Oxygen Therapy","Fluid Resuscitation",
   "Wound Cleaning","Suturing","Manual Ventilation",
   "Defib Shock","Vitals Check","Pain Assessment","Neuro Check",
-
   "Paramedic","EMT","First Responder","Charge Nurse",
   "Triage Nurse","Consultant","Registrar","Medical Student",
-
   "Emergency Room","Resus Bay","Trauma Room","ICU",
   "Ambulance","Helipad","Operating Theatre",
-
   "Code Blue","Cardiac Arrest","Sepsis","Stroke Alert",
   "Major Trauma","Anaphylaxis","Unconscious Patient",
-
   "Medical Chart","Radio Call","Patient Transfer",
   "Life Support","Night Shift","Blue Light Run","Sirens On"
 ];
@@ -172,3 +166,4 @@ db.collection("players").where("bingo","==",true)
 </script>
 </body>
 </html>
+
