@@ -19,14 +19,17 @@ h1,h2 { color:#c62828; }
   max-width: 760px;
   box-shadow: 0 15px 40px rgba(0,0,0,.12);
 }
-button,select {
-  padding: 14px 20px;
+input,button {
+  padding: 14px;
   border-radius: 12px;
   border: none;
   font-weight: bold;
-  cursor: pointer;
 }
-button { background:#c62828; color:white; }
+button {
+  background:#c62828;
+  color:white;
+  cursor:pointer;
+}
 button.reset { background:#000; }
 ul li {
   background:#f7fdfc;
@@ -41,33 +44,33 @@ ul li {
 
 <h1>🩺 Medic Bingo — Admin</h1>
 
-<div class="card">
-  <h2>🎮 Calling Mode</h2>
-  <select id="callMode">
-    <option value="words">Medic Words</option>
-    <option value="numbers">Numbers (1–75)</option>
-  </select>
+<!-- LOGIN -->
+<div class="card" id="login">
+  <h2>🔐 Admin Login</h2>
+  <input id="username" placeholder="Username"><br><br>
+  <input id="password" type="password" placeholder="Password"><br><br>
+  <button onclick="login()">Login</button>
 </div>
 
-<div class="card">
-  <h2>🎲 Call Next</h2>
-  <button id="callBtn">Call Item</button>
-  <p id="lastCall"><em>Nothing called yet</em></p>
-</div>
+<!-- PANEL -->
+<div id="panel" style="display:none;">
 
-<div class="card">
-  <h2>🏆 Winners</h2>
-  <ul id="winners"><li>None yet</li></ul>
-</div>
+  <div class="card">
+    <h2>🎲 Call Next Word</h2>
+    <button onclick="callNext()">Call Word</button>
+    <p id="lastCall"><em>Nothing called yet</em></p>
+  </div>
 
-<div class="card">
-  <h2>🔥 Close to Bingo</h2>
-  <ul id="near"><li>No one close</li></ul>
-</div>
+  <div class="card">
+    <h2>🏆 Winners</h2>
+    <ul id="winners"><li>None yet</li></ul>
+  </div>
 
-<div class="card">
-  <h2>🔁 Reset Game</h2>
-  <button class="reset" id="resetBtn">RESET GAME</button>
+  <div class="card">
+    <h2>🔁 Reset Game</h2>
+    <button class="reset" onclick="resetGame()">RESET GAME</button>
+  </div>
+
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -86,7 +89,19 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-/* 🔴 LARGE WORD LIST */
+/* 🔐 LOGIN */
+function login(){
+  const u = document.getElementById("username").value;
+  const p = document.getElementById("password").value;
+  if(u==="sassy123" && p==="sassyontop"){
+    document.getElementById("login").style.display="none";
+    document.getElementById("panel").style.display="block";
+  } else {
+    alert("Incorrect login");
+  }
+}
+
+/* 🩺 WORD LIST */
 const WORDS = [
   "Stethoscope","Blood Pressure Cuff","Pulse Oximeter","Thermometer",
   "Defibrillator","AED","IV Pump","IV Drip","Syringe","Needle",
@@ -102,75 +117,57 @@ const WORDS = [
   "CPR","Intubation","Cannulation","Blood Draw",
   "Airway Management","Oxygen Therapy","Fluid Resuscitation",
   "Wound Cleaning","Suturing","Manual Ventilation",
-  "Rapid Sequence Induction","Defib Shock","Vitals Check",
-  "Pain Assessment","Neuro Check",
+  "Defib Shock","Vitals Check","Pain Assessment","Neuro Check",
 
   "Paramedic","EMT","First Responder","Charge Nurse",
   "Triage Nurse","Consultant","Registrar","Medical Student",
-  "Anaesthetist","Radiographer","Pharmacist",
 
   "Emergency Room","Resus Bay","Trauma Room","ICU",
-  "Ambulance","Helipad","Waiting Room","Operating Theatre",
-  "Radiology","CT Scanner","MRI Suite",
+  "Ambulance","Helipad","Operating Theatre",
 
-  "Code Blue","Code Red","Cardiac Arrest","Respiratory Failure",
-  "Sepsis","Stroke Alert","Major Trauma","Anaphylaxis",
-  "Hypoglycaemia","Overdose","Burns","Unconscious Patient",
+  "Code Blue","Cardiac Arrest","Sepsis","Stroke Alert",
+  "Major Trauma","Anaphylaxis","Unconscious Patient",
 
-  "Medical Chart","Drug Round","Handover","Radio Call",
-  "Patient Transfer","Consent Form","Observation Chart",
-  "Triage Tag","Time Critical","Life Support",
-
-  "Night Shift","Bleeding Control","FAST Test",
-  "Blue Light Run","Sirens On","Stabilise Patient"
+  "Medical Chart","Radio Call","Patient Transfer",
+  "Life Support","Night Shift","Blue Light Run","Sirens On"
 ];
 
-// ensure game state exists
+/* GAME STATE */
 db.collection("game").doc("state").set({
   called: [],
-  callMode: "words",
   resetCounter: 0
-}, { merge:true });
+},{merge:true});
 
-document.getElementById("callBtn").onclick = async () => {
+async function callNext(){
   const ref = db.collection("game").doc("state");
   const data = (await ref.get()).data();
 
-  const pool = data.callMode === "numbers"
-    ? Array.from({length:75},(_,i)=>i+1)
-    : WORDS;
-
-  const remaining = pool.filter(x => !data.called.includes(x));
-  if (!remaining.length) return alert("All items called");
+  const remaining = WORDS.filter(w => !data.called.includes(w));
+  if(!remaining.length) return alert("All words called");
 
   const pick = remaining[Math.floor(Math.random()*remaining.length)];
   await ref.update({ called:[...data.called, pick] });
 
-  document.getElementById("lastCall").innerText = "Last called: " + pick;
-};
+  document.getElementById("lastCall").innerText =
+    "Last called: " + pick;
+}
 
-document.getElementById("resetBtn").onclick = async () => {
+async function resetGame(){
   const players = await db.collection("players").get();
-  players.forEach(p => p.ref.delete());
+  players.forEach(p=>p.ref.delete());
 
   await db.collection("game").doc("state").update({
-    called: [],
-    resetCounter: firebase.firestore.FieldValue.increment(1)
+    called:[],
+    resetCounter:firebase.firestore.FieldValue.increment(1)
   });
-};
+}
 
+/* WINNERS */
 db.collection("players").where("bingo","==",true)
 .onSnapshot(snap=>{
-  const ul = document.getElementById("winners");
-  ul.innerHTML = snap.empty ? "<li>None yet</li>" : "";
-  snap.forEach(d => ul.innerHTML += `<li>${d.id}</li>`);
-});
-
-db.collection("players").where("nearBingo","==",true)
-.onSnapshot(snap=>{
-  const ul = document.getElementById("near");
-  ul.innerHTML = snap.empty ? "<li>No one close</li>" : "";
-  snap.forEach(d => ul.innerHTML += `<li>${d.id} → ${d.data().nearLine}</li>`);
+  const ul=document.getElementById("winners");
+  ul.innerHTML=snap.empty?"<li>None yet</li>":"";
+  snap.forEach(d=>ul.innerHTML+=`<li>${d.id}</li>`);
 });
 </script>
 </body>
