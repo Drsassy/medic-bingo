@@ -113,6 +113,11 @@ input {
     <p id="lastWord"><em>No word called yet</em></p>
   </div>
 
+<div class="card">
+  <h2>📊Words Called</h2>
+  <p id="wordcount">0</p>
+</div> 
+  
   <div class="card">
     <h2>🏆 Winners (Live)</h2>
     <ul id="winners">
@@ -246,8 +251,18 @@ async function resetGame() {
   document.getElementById("lastWord").innerText = "No word called yet";
   alert("Game reset");
 }
+
+  db.collection("game").doc("state").onSnapshot(doc =>{
+    if (!doc.exists) return;
+    const data = doc.data();
+    const count = datta.called?.length || 0;
+    document.getElementById("wordcount").innerText =
+      `${count} / ${WORDS.length} words called`;
+  });
+  
 </script>
 
 </body>
 </html>
+
 
