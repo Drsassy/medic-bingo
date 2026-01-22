@@ -5,37 +5,40 @@
 <title>Medic Bingo – Admin</title>
 
 <style>
+:root { --red:#c62828; }
 body {
-  font-family: "Segoe UI", Arial, sans-serif;
-  background: linear-gradient(135deg,#eef2f7,#ffffff);
-  padding: 30px;
+  font-family:"Segoe UI",Arial,sans-serif;
+  background:linear-gradient(135deg,#eef2f7,#ffffff);
+  padding:30px;
 }
-h1,h2 { color:#c62828; }
+h1,h2 { color:var(--red); }
 .card {
-  background: white;
-  border-radius: 18px;
-  padding: 24px;
-  margin-bottom: 22px;
-  max-width: 760px;
-  box-shadow: 0 15px 40px rgba(0,0,0,.12);
+  background:white;
+  border-radius:20px;
+  padding:26px;
+  margin-bottom:22px;
+  max-width:760px;
+  box-shadow:0 15px 40px rgba(0,0,0,.12);
 }
 input,button {
-  padding: 14px;
-  border-radius: 12px;
-  border: none;
-  font-weight: bold;
+  padding:14px;
+  border-radius:14px;
+  border:none;
+  font-size:15px;
 }
 button {
-  background:#c62828;
+  background:var(--red);
   color:white;
+  font-weight:bold;
   cursor:pointer;
 }
 button.reset { background:#000; }
 ul li {
   background:#f7fdfc;
-  padding:10px;
-  border-radius:10px;
-  margin-bottom:6px;
+  padding:12px;
+  border-radius:12px;
+  margin-bottom:8px;
+  font-weight:bold;
 }
 </style>
 </head>
@@ -45,11 +48,11 @@ ul li {
 <h1>🩺 Medic Bingo — Admin</h1>
 
 <!-- LOGIN -->
-<div class="card" id="login">
+<div class="card" id="loginCard">
   <h2>🔐 Admin Login</h2>
   <input id="username" placeholder="Username"><br><br>
   <input id="password" type="password" placeholder="Password"><br><br>
-  <button onclick="login()">Login</button>
+  <button onclick="adminLogin()">Login</button>
 </div>
 
 <!-- PANEL -->
@@ -58,12 +61,12 @@ ul li {
   <div class="card">
     <h2>🎲 Call Next Word</h2>
     <button onclick="callNext()">Call Word</button>
-    <p id="lastCall"><em>Nothing called yet</em></p>
+    <p id="lastCall"><em>No word called yet</em></p>
   </div>
 
   <div class="card">
     <h2>🏆 Winners</h2>
-    <ul id="winners"><li>None yet</li></ul>
+    <ul id="winners"><li>No winners yet</li></ul>
   </div>
 
   <div class="card">
@@ -78,60 +81,76 @@ ul li {
 
 <script>
 const firebaseConfig = {
-    apiKey: "AIzaSyDASEWy-s1lBVTiXiJWx7KRvlk_IB1mN24",
-    authDomain: "medic-bingo.firebaseapp.com",
-    projectId: "medic-bingo",
-    storageBucket: "medic-bingo.firebasestorage.app",
-    messagingSenderId: "677419756545",
-    appId: "1:677419756545:web:099e1928113290c587a400"
-  };
-
+  apiKey:"PASTE",
+  authDomain:"PASTE",
+  projectId:"PASTE",
+  storageBucket:"PASTE",
+  messagingSenderId:"PASTE",
+  appId:"PASTE"
+};
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 /* 🔐 LOGIN */
-function login(){
+function adminLogin(){
   const u = document.getElementById("username").value;
   const p = document.getElementById("password").value;
+
   if(u==="sassy123" && p==="sassyontop"){
-    document.getElementById("login").style.display="none";
+    document.getElementById("loginCard").style.display="none";
     document.getElementById("panel").style.display="block";
   } else {
     alert("Incorrect login");
   }
 }
 
-/* 🩺 WORD LIST */
+/* 🩺 LARGE MEDIC WORD LIST */
 const bingoWords = [
-"Stethoscope","Blood Pressure Cuff","Pulse Oximeter","Thermometer",
+  // Equipment
+  "Stethoscope","Blood Pressure Cuff","Pulse Oximeter","Thermometer",
   "Defibrillator","AED","IV Pump","IV Drip","Syringe","Needle",
   "Oxygen Tank","Oxygen Mask","Bag Valve Mask","Ventilator",
   "Heart Monitor","ECG Leads","Ultrasound","Laryngoscope",
   "Suction Unit","Crash Cart",
+
+  // PPE & supplies
   "Gloves","Face Mask","Gown","Visor","Sanitiser",
   "Disinfectant","Sharps Bin","Biohazard Bag","Sterile Field",
   "Dressings","Bandages","Gauze","Tourniquet","Splint",
   "Cervical Collar","Backboard",
+
+  // Procedures
   "CPR","Intubation","Cannulation","Blood Draw",
   "Airway Management","Oxygen Therapy","Fluid Resuscitation",
   "Wound Cleaning","Suturing","Manual Ventilation",
   "Defib Shock","Vitals Check","Pain Assessment","Neuro Check",
+
+  // Roles
   "Paramedic","EMT","First Responder","Charge Nurse",
   "Triage Nurse","Consultant","Registrar","Medical Student",
+  "Anaesthetist","Radiographer","Pharmacist",
+
+  // Locations
   "Emergency Room","Resus Bay","Trauma Room","ICU",
-  "Ambulance","Helipad","Operating Theatre",
+  "Ambulance","Helipad","Operating Theatre","Radiology",
+
+  // Emergencies
   "Code Blue","Cardiac Arrest","Sepsis","Stroke Alert",
   "Major Trauma","Anaphylaxis","Unconscious Patient",
+
+  // Admin / misc
   "Medical Chart","Radio Call","Patient Transfer",
-  "Life Support","Night Shift","Blue Light Run","Sirens On"
+  "Life Support","Night Shift","Bleeding Control",
+  "Blue Light Run","Sirens On","Stabilise Patient"
 ];
 
 /* GAME STATE */
 db.collection("game").doc("state").set({
-  called: [],
-  resetCounter: 0
+  called:[],
+  resetCounter:0
 },{merge:true});
 
+/* 🎲 CALL WORD */
 async function callNext(){
   const ref = db.collection("game").doc("state");
   const data = (await ref.get()).data();
@@ -146,9 +165,10 @@ async function callNext(){
     "Last called: " + pick;
 }
 
+/* 🔁 RESET */
 async function resetGame(){
   const players = await db.collection("players").get();
-  players.forEach(p=>p.ref.delete());
+  players.forEach(p => p.ref.delete());
 
   await db.collection("game").doc("state").update({
     called:[],
@@ -156,14 +176,13 @@ async function resetGame(){
   });
 }
 
-/* WINNERS */
+/* 🏆 WINNERS */
 db.collection("players").where("bingo","==",true)
 .onSnapshot(snap=>{
-  const ul=document.getElementById("winners");
-  ul.innerHTML=snap.empty?"<li>None yet</li>":"";
-  snap.forEach(d=>ul.innerHTML+=`<li>${d.id}</li>`);
+  const ul = document.getElementById("winners");
+  ul.innerHTML = snap.empty ? "<li>No winners yet</li>" : "";
+  snap.forEach(d => ul.innerHTML += `<li>${d.id}</li>`);
 });
 </script>
 </body>
 </html>
-
