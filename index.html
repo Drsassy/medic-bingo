@@ -147,27 +147,42 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 const bingoWords = [
-"Stethoscope","Blood Pressure Cuff","Pulse Oximeter","Thermometer",
+  // Equipment
+  "Stethoscope","Blood Pressure Cuff","Pulse Oximeter","Thermometer",
   "Defibrillator","AED","IV Pump","IV Drip","Syringe","Needle",
   "Oxygen Tank","Oxygen Mask","Bag Valve Mask","Ventilator",
   "Heart Monitor","ECG Leads","Ultrasound","Laryngoscope",
   "Suction Unit","Crash Cart",
+
+  // PPE & supplies
   "Gloves","Face Mask","Gown","Visor","Sanitiser",
   "Disinfectant","Sharps Bin","Biohazard Bag","Sterile Field",
   "Dressings","Bandages","Gauze","Tourniquet","Splint",
   "Cervical Collar","Backboard",
+
+  // Procedures
   "CPR","Intubation","Cannulation","Blood Draw",
   "Airway Management","Oxygen Therapy","Fluid Resuscitation",
   "Wound Cleaning","Suturing","Manual Ventilation",
   "Defib Shock","Vitals Check","Pain Assessment","Neuro Check",
+
+  // Roles
   "Paramedic","EMT","First Responder","Charge Nurse",
   "Triage Nurse","Consultant","Registrar","Medical Student",
+  "Anaesthetist","Radiographer","Pharmacist",
+
+  // Locations
   "Emergency Room","Resus Bay","Trauma Room","ICU",
-  "Ambulance","Helipad","Operating Theatre",
+  "Ambulance","Helipad","Operating Theatre","Radiology",
+
+  // Emergencies
   "Code Blue","Cardiac Arrest","Sepsis","Stroke Alert",
   "Major Trauma","Anaphylaxis","Unconscious Patient",
+
+  // Admin / misc
   "Medical Chart","Radio Call","Patient Transfer",
-  "Life Support","Night Shift","Blue Light Run","Sirens On"
+  "Life Support","Night Shift","Bleeding Control",
+  "Blue Light Run","Sirens On","Stabilise Patient"
 ];
 
 
@@ -296,3 +311,4 @@ db.collection("game").doc("state").onSnapshot(doc => {
 
 </body>
 </html>
+
